@@ -1,0 +1,308 @@
+{
+  "proyecto": "Cotizador Dryada",
+  "version": "1.0",
+  "ultima_actualizacion": "2026-04-29",
+  "fases": [
+    {
+      "id": "F1",
+      "nombre": "Backend Core (lógica pura, sin HTTP)",
+      "nivel": 1,
+      "descripcion": "Construir la lógica de negocio sin exposición HTTP. Al final de esta fase, la fórmula de cotización funciona y puede testearse con unit tests.",
+      "tareas": [
+        {
+          "id": "F1-T1",
+          "titulo": "Scaffolding del backend",
+          "descripcion": "Inicializar proyecto Node.js + TypeScript con Fastify. Configurar tsconfig, eslint, paths. Crear estructura de carpetas base.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": [],
+          "criterio_done": "npm run dev levanta el servidor sin errores. TypeScript compila sin warnings."
+        },
+        {
+          "id": "F1-T2",
+          "titulo": "Parser STL: detección binario/ASCII",
+          "descripcion": "Implementar parseStl(buffer) que detecta el formato (primeros bytes 'solid' = ASCII, sino binario) y devuelve array de triángulos [[v0,v1,v2], ...].",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "Parsea correctamente un STL binario y uno ASCII. Test con cubo 10x10x10mm."
+        },
+        {
+          "id": "F1-T3",
+          "titulo": "STL Processor: volumen + área superficial",
+          "descripcion": "Implementar analizarStl(buffer) que calcula volumen (tetraedros signados) y área superficial (producto vectorial) en una sola iteración. Retorna { volumenCm3, areaCm2, boundingBox }.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T2"],
+          "criterio_done": "Cubo 10x10x10mm → volumenCm3 = 1.0, areaCm2 = 6.0. Error < 0.1%."
+        },
+        {
+          "id": "F1-T4",
+          "titulo": "Detección de pieza compleja (índice de compacidad)",
+          "descripcion": "Implementar evaluarComplejidad(areaCm2, volumenCm3) que devuelve 'simple' | 'moderada' | 'compleja' usando IC = area / volumen^(2/3). Umbrales: >20 = compleja, >12 = moderada.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F1-T3"],
+          "criterio_done": "Esfera → 'simple'. Celosía de test → 'compleja'. Mensaje de advertencia correcto para cada nivel."
+        },
+        {
+          "id": "F1-T5",
+          "titulo": "Validación de unidades y geometría inválida",
+          "descripcion": "Si bounding box > 500mm en alguna dimensión: advertir probable pulgadas. Si volumen calculado <= 0: retornar error de geometría inválida.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T3"],
+          "criterio_done": "STL en pulgadas genera advertencia con las dimensiones calculadas. STL con malla abierta genera error claro."
+        },
+        {
+          "id": "F1-T6",
+          "titulo": "JsonPricesRepository",
+          "descripcion": "Implementar IPricesRepository leyendo desde src/data/prices.json. Métodos: getMateriales(), getMaterialById(id), getCostoInicio().",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "getMateriales() retorna el array del JSON. getMaterialById con ID inexistente retorna null."
+        },
+        {
+          "id": "F1-T7",
+          "titulo": "InMemoryQuoteRepository",
+          "descripcion": "Implementar IQuoteRepository con almacenamiento en Map en memoria. Métodos: save(quote), findById(id), findByEmpleado(empleadoId).",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "save() y findById() funcionan correctamente. El estado se pierde al reiniciar el servidor (esperado en N1)."
+        },
+        {
+          "id": "F1-T8",
+          "titulo": "QuoteService: fórmula de cotización",
+          "descripcion": "Implementar calcularCotizacion({ stlAnalysis, materialId, cantidad }) usando la fórmula mejorada: infill_weight + wall_weight. Inyectar IPricesRepository. Retornar desglose completo.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T3", "F1-T4", "F1-T6"],
+          "criterio_done": "Con volumen=10cm³, area=30cm², PLA (1.24g/cm³), precio=0.08 USD/g → resultado calculado manualmente coincide. Desglose incluye cada componente del precio en USD."
+        },
+        {
+          "id": "F1-T9",
+          "titulo": "Cargar prices.json con materiales reales de Dryada",
+          "descripcion": "Completar src/data/prices.json con los materiales que usa Dryada (PLA, PETG, ABS, etc.), sus precios por gramo y densidades. Confirmar valores con el equipo.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "JSON validado por el equipo de ventas/producción con precios actualizados."
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "nombre": "Backend HTTP (rutas Fastify)",
+      "nivel": 1,
+      "descripcion": "Exponer la lógica del core como API REST. Al final de esta fase, la API es consumible con curl o Postman.",
+      "tareas": [
+        {
+          "id": "F2-T1",
+          "titulo": "Ruta POST /api/upload",
+          "descripcion": "Recibe archivo STL (multipart/form-data). Valida extensión y tamaño (max 50MB). Llama a analizarStl(). Guarda archivo en /tmp con UUID. Retorna { uploadId, volumenCm3, areaCm2, boundingBox, complejidad, advertencias }.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T3", "F1-T4", "F1-T5"],
+          "criterio_done": "curl con STL válido retorna 200 con análisis. Archivo > 50MB retorna 413. Extensión incorrecta retorna 400."
+        },
+        {
+          "id": "F2-T2",
+          "titulo": "Ruta GET /api/materials",
+          "descripcion": "Retorna lista de materiales desde IPricesRepository. Sin autenticación en N1.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T6"],
+          "criterio_done": "Retorna array de materiales con id, nombre, precioGramo, densidad."
+        },
+        {
+          "id": "F2-T3",
+          "titulo": "Ruta POST /api/quote",
+          "descripcion": "Recibe { uploadId, materialId, cantidad, observaciones? }. Valida que el uploadId exista (archivo en /tmp). Calcula cotización. Guarda en IQuoteRepository. Retorna desglose completo con id de cotización.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F2-T1", "F2-T2", "F1-T8"],
+          "criterio_done": "POST con datos válidos retorna cotización completa con número único. Material inválido retorna 404."
+        },
+        {
+          "id": "F2-T4",
+          "titulo": "Ruta POST /api/quote/:id/email",
+          "descripcion": "Recibe { destinatario, pdfBase64 }. Envía el PDF adjunto por email usando EmailService (Gmail SMTP). Retorna 200 cuando el envío es exitoso.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F2-T3"],
+          "criterio_done": "Email llega a la casilla de destino con PDF adjunto. Destino inválido retorna 400."
+        },
+        {
+          "id": "F2-T5",
+          "titulo": "EmailService con Gmail SMTP (App Password)",
+          "descripcion": "Implementar EmailService usando Nodemailer con smtp.gmail.com:587 + STARTTLS. Leer credenciales desde variables de entorno. En desarrollo, usar modo preview (Ethereal) si SMTP_USER no está seteado.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "Envío exitoso a casilla real con App Password configurada. En dev sin credenciales, loguea la URL de preview de Ethereal."
+        },
+        {
+          "id": "F2-T6",
+          "titulo": "Manejo de errores global y validación de schemas",
+          "descripcion": "Configurar error handler global de Fastify. Definir schemas JSON para request/response de cada ruta. Errores deben retornar { error: string, code: string } consistente.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F2-T1", "F2-T2", "F2-T3", "F2-T4"],
+          "criterio_done": "Campos faltantes en POST /api/quote retornan 400 con mensaje claro. Errores internos retornan 500 sin stack trace expuesto."
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "nombre": "Frontend React",
+      "nivel": 1,
+      "descripcion": "Construir la UI completa. Al final de esta fase, un empleado puede completar el flujo end-to-end en el browser.",
+      "tareas": [
+        {
+          "id": "F3-T1",
+          "titulo": "Scaffolding del frontend",
+          "descripcion": "Crear proyecto con Vite + React + TypeScript. Instalar Tailwind CSS. Configurar proxy al backend en vite.config.ts. Estructura de carpetas base.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": [],
+          "criterio_done": "npm run dev levanta la app. Tailwind funciona. Proxy /api → backend:3001."
+        },
+        {
+          "id": "F3-T2",
+          "titulo": "ModelViewer: visualización 3D del STL",
+          "descripcion": "Componente con react-three-fiber + @react-three/drei. Usar STLLoader para cargar desde URL del backend. OrbitControls para rotar. Iluminación básica. Indicador de carga.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T1"],
+          "criterio_done": "STL real se visualiza correctamente. Se puede rotar con mouse. Funciona tanto con STL binario como ASCII."
+        },
+        {
+          "id": "F3-T3",
+          "titulo": "FileUploader: carga y análisis del STL",
+          "descripcion": "Drag & drop + selector de archivo. Validación client-side de extensión (.stl) y tamaño (<50MB). POST a /api/upload. Mostrar spinner durante el análisis. Mostrar dimensiones del modelo y advertencias (unidades, complejidad). Pasar uploadId al siguiente paso.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T1", "F3-T2"],
+          "criterio_done": "Sube un STL real, muestra dimensiones y el modelo 3D. Advertencia de pieza compleja se muestra correctamente."
+        },
+        {
+          "id": "F3-T4",
+          "titulo": "QuoteForm: selector de material y cantidad",
+          "descripcion": "GET /api/materials para poblar el selector. Mostrar nombre y precio/g de cada material. Input numérico de cantidad (mínimo 1). Textarea de observaciones (opcional). Botón Calcular cotización.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T3"],
+          "criterio_done": "Selector muestra materiales reales. El formulario valida campos requeridos antes de enviar."
+        },
+        {
+          "id": "F3-T5",
+          "titulo": "QuoteResult: desglose y acciones",
+          "descripcion": "Mostrar desglose completo: volumen, área, gramos (infill + paredes), costo material, costo inicio, precio final. Número de cotización. Botón Descargar PDF. Botón Enviar por email (abre modal con campo de destinatario). Si complejidad = 'compleja', mostrar banner de advertencia prominente.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T4"],
+          "criterio_done": "Todos los valores del desglose son correctos. Advertencia de pieza compleja visible antes de que el empleado envíe la cotización."
+        },
+        {
+          "id": "F3-T6",
+          "titulo": "PDF client-side con @react-pdf/renderer",
+          "descripcion": "Template de PDF con: logo Dryada, número de cotización, fecha, empleado, modelo STL, material, cantidad, desglose de precios, observaciones, advertencia de margen si aplica. Botón descarga el PDF directamente.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T5"],
+          "criterio_done": "PDF generado tiene todos los campos. Logo visible. Formato profesional validado por el equipo de ventas."
+        },
+        {
+          "id": "F3-T7",
+          "titulo": "Modal de envío por email",
+          "descripcion": "Modal con campo de email del destinatario. Convierte el PDF a base64 y hace POST a /api/quote/:id/email. Muestra confirmación de envío exitoso o error.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T6"],
+          "criterio_done": "Email llega al destinatario con el PDF correcto como adjunto."
+        },
+        {
+          "id": "F3-T8",
+          "titulo": "Pantalla de identidad del empleado",
+          "descripcion": "Pantalla simple de inicio: campo nombre del empleado (sin autenticación real en N1). El nombre queda en estado de la app y se incluye en la cotización y trazabilidad.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F3-T1"],
+          "criterio_done": "Nombre del empleado aparece en el PDF y en el QuoteRecord guardado."
+        },
+        {
+          "id": "F3-T9",
+          "titulo": "Manejo de errores y estados de carga en UI",
+          "descripcion": "Todos los estados de error de la API deben mostrarse de forma amigable (no mensajes técnicos). Indicadores de carga en todas las operaciones async. Mensajes para: STL inválido, material no encontrado, error de email, etc.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F3-T3", "F3-T4", "F3-T5", "F3-T7"],
+          "criterio_done": "Ningún error técnico llega al empleado sin traducción a lenguaje humano."
+        }
+      ]
+    },
+    {
+      "id": "F4",
+      "nombre": "Validación y calibración antes del lanzamiento",
+      "nivel": 1,
+      "descripcion": "Validar la precisión del cálculo contra piezas físicas reales y probar casos borde antes de abrir a ventas.",
+      "tareas": [
+        {
+          "id": "F4-T1",
+          "titulo": "Calibración con 10 piezas físicas",
+          "descripcion": "Pesar 10 piezas reales de la impresora. Cotizarlas con el sistema. Documentar el error porcentual real vs. estimado. Ajustar constantes (n_perimetros, fill_ratio) si el error sistemático supera el 15%.",
+          "estado": "pending",
+          "prioridad": "critica",
+          "dependencias": ["F3-T5"],
+          "criterio_done": "Tabla de calibración con error promedio < 15% en las 10 piezas. Constantes ajustadas documentadas."
+        },
+        {
+          "id": "F4-T2",
+          "titulo": "Prueba de archivos STL problemáticos",
+          "descripcion": "Probar con: STL en pulgadas, STL ASCII, STL con malla abierta/normales invertidas, STL > 50MB, STL de una pieza muy fina (celosía). Verificar que los errores y advertencias son correctos.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F2-T1"],
+          "criterio_done": "Cada caso borde tiene un comportamiento documentado y un mensaje claro para el empleado."
+        },
+        {
+          "id": "F4-T3",
+          "titulo": "Validación del PDF con el equipo de ventas",
+          "descripcion": "Generar 3 PDFs de cotizaciones reales. El equipo de ventas valida que el formato, los campos y el aspecto visual son correctos para enviar a clientes.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T6"],
+          "criterio_done": "Aprobación explícita del equipo de ventas sobre el formato del PDF."
+        },
+        {
+          "id": "F4-T4",
+          "titulo": "Prueba end-to-end del flujo completo",
+          "descripcion": "Un empleado del equipo de ventas (no el desarrollador) completa el flujo completo: subir STL → seleccionar material → cotizar → descargar PDF → enviar por email. Sin intervención técnica.",
+          "estado": "pending",
+          "prioridad": "critica",
+          "dependencias": ["F4-T1", "F4-T2", "F4-T3"],
+          "criterio_done": "El empleado completa el flujo sin ayuda y sin encontrar errores bloqueantes."
+        },
+        {
+          "id": "F4-T5",
+          "titulo": "Verificar configuración de Gmail en producción",
+          "descripcion": "Confirmar que el App Password está generado para la cuenta de producción. Probar envío desde el servidor de producción (no localhost). Verificar que el email no cae en spam.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F2-T5"],
+          "criterio_done": "Email enviado desde prod llega a la bandeja principal (no spam) en < 30 segundos."
+        }
+      ]
+    }
+  ],
+  "metricas": {
+    "total_tareas": 28,
+    "completadas": 15,
+    "en_progreso": 0,
+    "pendientes": 13,
+    "ultimo_commit": "2026-04-29",
+    "nota": "Scaffolding completo. Backend implementado (F1+F2 en código, pendientes tests). Frontend scaffoldeado con Vite+React18, dependencias 3D instaladas. Pendiente: Tailwind, componentes UI, tests manuales y confirmación de precios con el equipo."
+  }
+}

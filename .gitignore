@@ -1,0 +1,47 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Variables de entorno — nunca versionar
+.env
+.env.local
+.env.*.local
+
+# Uploads temporales
+/backend/tmp/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Archivos de trabajo temporales
+*.rtf
+*.docx
+*.html
+!frontend/index.html
+
+# Coverage
+coverage/
+.nyc_output/

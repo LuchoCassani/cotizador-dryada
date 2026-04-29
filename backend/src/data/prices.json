@@ -1,0 +1,9 @@
+{
+  "costoInicio": 5.00,
+  "materiales": [
+    { "id": "pla-standard", "nombre": "PLA Estándar", "precioGramo": 0.08, "densidad": 1.24 },
+    { "id": "pla-silk",     "nombre": "PLA Silk",     "precioGramo": 0.12, "densidad": 1.24 },
+    { "id": "petg",         "nombre": "PETG",         "precioGramo": 0.10, "densidad": 1.27 },
+    { "id": "abs",          "nombre": "ABS",          "precioGramo": 0.09, "densidad": 1.04 }
+  ]
+}
