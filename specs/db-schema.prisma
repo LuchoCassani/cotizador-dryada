@@ -1,0 +1,147 @@
+// Prisma schema — Cotizador Dryada, Nivel 2
+// Referencia de diseño. No se usa en N1 (JSON + memoria).
+// Cuando se migre a N2: copiar a backend/prisma/schema.prisma y correr prisma migrate.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Materiales — reemplaza prices.json
+// ─────────────────────────────────────────────────────────────
+
+model Material {
+  id             String   @id @default(uuid())
+  nombre         String
+  precioGramoUsd Float    @map("precio_gramo_usd")
+  densidadGCm3   Float    @map("densidad_g_cm3")
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  cotizaciones Cotizacion[]
+
+  @@map("materiales")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Cotizaciones — desglose completo snapshot al momento de cotizar
+// ─────────────────────────────────────────────────────────────
+
+enum EstadoCotizacion {
+  borrador
+  enviada
+  aceptada
+  rechazada
+}
+
+enum NivelComplejidad {
+  simple
+  moderada
+  compleja
+}
+
+model Cotizacion {
+  id                 String            @id @default(uuid())
+  numeroCotizacion   String            @unique @map("numero_cotizacion")
+
+  // Snapshot del material al momento de cotizar (precios no cambian con el tiempo)
+  materialId         String            @map("material_id")
+  material           Material          @relation(fields: [materialId], references: [id])
+  precioGramoUsdUsado Float            @map("precio_gramo_usd_usado")
+
+  // Empleado — dos columnas para migración limpia a N3 (ver SDD sección 11.2)
+  empleadoNombre     String            @map("empleado_nombre")
+  empleadoId         String?           @map("empleado_id")     // null hasta N3
+  empleado           Empleado?         @relation(fields: [empleadoId], references: [id])
+
+  // Geometría
+  volumenCm3         Float             @map("volumen_cm3")
+  areaCm2            Float             @map("area_cm2")
+  complejidad        NivelComplejidad
+  advertencias       Json              @default("[]")           // jsonb, indexable con GIN
+
+  // Desglose de gramos
+  gramosInfill       Float             @map("gramos_infill")
+  gramosParedes      Float             @map("gramos_paredes")
+  gramosTotal        Float             @map("gramos_total")
+
+  // Desglose de precios (USD)
+  costoMaterialUsd   Float             @map("costo_material_usd")
+  costoInicioUsd     Float             @map("costo_inicio_usd")
+  precioUnitarioUsd  Float             @map("precio_unitario_usd")
+  cantidad           Int
+  precioFinalUsd     Float             @map("precio_final_usd")
+
+  // Snapshot de parámetros de impresión usados (ver SDD sección 11.2)
+  fillRatioUsado     Float             @map("fill_ratio_usado")
+  nPerimetrosUsado   Int               @map("n_perimetros_usado")
+  anchoLineaCmUsado  Float             @map("ancho_linea_cm_usado")
+
+  observaciones      String?
+  estado             EstadoCotizacion  @default(borrador)
+  createdAt          DateTime          @default(now()) @map("created_at")
+
+  emails EmailEnviado[]
+
+  @@map("cotizaciones")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Emails enviados — separado de cotizaciones para soportar reenvíos
+// ─────────────────────────────────────────────────────────────
+
+enum EstadoEmail {
+  enviado
+  fallido
+}
+
+model EmailEnviado {
+  id             String      @id @default(uuid())
+  cotizacionId   String      @map("cotizacion_id")
+  cotizacion     Cotizacion  @relation(fields: [cotizacionId], references: [id])
+  destinatario   String
+  estado         EstadoEmail
+  errorMensaje   String?     @map("error_mensaje")
+  enviadoAt      DateTime    @default(now()) @map("enviado_at")
+
+  @@map("emails_enviados")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Empleados — aparece en N3 para historial y métricas por vendedor
+// ─────────────────────────────────────────────────────────────
+
+model Empleado {
+  id           String       @id @default(uuid())
+  nombre       String
+  email        String       @unique
+  activo       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  cotizaciones Cotizacion[]
+
+  @@map("empleados")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Configuración de impresión — N3: parámetros editables desde panel admin
+// ─────────────────────────────────────────────────────────────
+
+model ConfigImpresion {
+  id              String   @id @default(uuid())
+  fillRatio       Float    @map("fill_ratio")
+  nPerimetros     Int      @map("n_perimetros")
+  anchoLineaCm    Float    @map("ancho_linea_cm")
+  layerHeightCm   Float    @map("layer_height_cm")
+  costoInicioUsd  Float    @map("costo_inicio_usd")
+  esActiva        Boolean  @default(false) @map("es_activa")  // solo una puede ser true
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("config_impresion")
+}

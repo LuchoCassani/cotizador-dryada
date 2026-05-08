@@ -544,4 +544,59 @@ Para el volumen de cotizaciones internas de Dryada, ambos límites son más que 
 
 ---
 
-*Fin del documento SDD v1.1 — Cotizador Dryada*
+## 11. Diseño de base de datos (Nivel 2)
+
+### 11.1 Esquema de tablas
+
+Cinco tablas cubren el dominio completo. El schema está en `specs/db-schema.prisma`.
+
+| Tabla | Propósito | Aparece en |
+|---|---|---|
+| `materiales` | Reemplaza `prices.json`. Campo `activo` para soft delete. `updated_at` para auditoría de precios. | N2 |
+| `cotizaciones` | Desglose completo snapshot al momento de cotizar. Nada se recalcula. | N2 |
+| `emails_enviados` | Log separado de envíos. Una cotización puede tener múltiples (reenvíos). | N2 |
+| `empleados` | Tabla de empleados para historial y métricas por vendedor. | N3 |
+| `config_impresion` | Parámetros de impresión editables. `es_activa` garantiza que siempre haya una config vigente sin pisar la historia. | N3 |
+
+### 11.2 Decisiones de diseño
+
+**Snapshot de precios** — `cotizaciones` guarda `costo_material_usd` calculado al momento de la cotización. No guarda el precio del material por referencia. Si el precio de PLA cambia mañana, las cotizaciones históricas no se alteran.
+
+**Empleado como dos columnas desde N2** — En N1 `empleado_id` es string libre. Para no tener una migración dolorosa cuando se agregue la tabla `empleados` en N3, desde N2 `cotizaciones` tendrá dos columnas:
+```
+empleado_nombre  TEXT        -- siempre legible, nunca se pierde
+empleado_id      UUID? FK    -- null en N1, FK real en N3
+```
+
+**Snapshot de parámetros de impresión** — `config_impresion` no tiene FK en `cotizaciones`. En cambio, los parámetros usados se copian en la fila de cotización (`fill_ratio_usado`, `n_perimetros_usado`, `ancho_linea_cm_usado`). Misma filosofía que el snapshot de precios: los datos históricos no dependen de la config actual.
+
+**`advertencias` como `jsonb`** — Permite índices GIN y queries eficientes del tipo "cotizaciones con advertencia X en el mes Y". Con `text[]` esto no indexa bien.
+
+**`estado` como enum** — Ciclo de vida de una cotización: `borrador → enviada → aceptada → rechazada`. Se define como enum en Prisma para aprovechar el type safety en TypeScript.
+
+### 11.3 Repositorio faltante para N2
+
+El diagrama de evolución no incluye `IEmailLogRepository`. En N1 el `EmailService` solo envía sin persistir. En N2, con `emails_enviados` como tabla real, se necesita:
+
+```typescript
+// src/repositories/email-log.repository.ts
+export interface EmailLog {
+  id: string;
+  cotizacionId: string;
+  destinatario: string;
+  estado: 'enviado' | 'fallido';
+  errorMensaje?: string;
+  enviadoAt: Date;
+}
+
+export interface IEmailLogRepository {
+  save(log: EmailLog): Promise<void>;
+  findByCotizacion(cotizacionId: string): Promise<EmailLog[]>;
+}
+```
+
+`EmailService` recibirá este repositorio por inyección de dependencias al igual que los otros. El swap en `app.ts` cuando se conecte a Postgres será transparente.
+
+---
+
+*Fin del documento SDD v1.2 — Cotizador Dryada*
