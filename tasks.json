@@ -297,6 +297,106 @@
       ]
     }
   ],
+  "fases_infra": [
+    {
+      "id": "F5",
+      "nombre": "Infraestructura y Deploy (Railway + Docker + GitHub Actions)",
+      "nivel": 1,
+      "descripcion": "Containerizar la aplicación, configurar el pipeline CI/CD y hacer el primer deploy a Railway. Ver specs/infra-deploy-sdd.md para el detalle completo.",
+      "tareas": [
+        {
+          "id": "F5-T1",
+          "titulo": "Crear backend/Dockerfile multi-stage",
+          "descripcion": "Etapa build: node:20-alpine + tsc. Etapa runtime: node:20-alpine + solo deps de producción + dist/. Usuario no-root. Exponer puerto 3001.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "docker build backend/ genera imagen sin errores. docker run arranca el servidor y responde en /api/materials."
+        },
+        {
+          "id": "F5-T2",
+          "titulo": "Crear frontend/Dockerfile + frontend/nginx.conf",
+          "descripcion": "Etapa build: node:20-alpine + vite build (con ARG VITE_API_URL). Etapa runtime: nginx:alpine + nginx.conf con SPA fallback, gzip y caché agresiva para assets.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F3-T1"],
+          "criterio_done": "docker build --build-arg VITE_API_URL=http://localhost:3001 frontend/ genera imagen. docker run en puerto 80 sirve la SPA. Recargar /cualquier-ruta no da 404."
+        },
+        {
+          "id": "F5-T3",
+          "titulo": "Crear docker-compose.yml raíz con hot reload",
+          "descripcion": "Tres servicios: backend (tsx watch + volumen src/), frontend (vite --host + volumen src/), postgres:15-alpine con healthcheck. Variable BACKEND_URL para el proxy de Vite.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F5-T1", "F5-T2"],
+          "criterio_done": "docker compose up levanta los tres servicios. Cambiar un archivo en backend/src/ recarga sin reiniciar el contenedor. La UI del frontend llega al backend."
+        },
+        {
+          "id": "F5-T4",
+          "titulo": "Crear .dockerignore en backend y frontend",
+          "descripcion": "Excluir node_modules/, dist/, .env, .env.*, logs, .DS_Store.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F5-T1", "F5-T2"],
+          "criterio_done": "docker build no incluye node_modules/ del host. Verificar con docker inspect."
+        },
+        {
+          "id": "F5-T5",
+          "titulo": "Actualizar vite.config.ts para leer BACKEND_URL de env",
+          "descripcion": "Cambiar el target del proxy de 'http://localhost:3001' a process.env.BACKEND_URL || 'http://localhost:3001'. Así docker-compose puede inyectar 'http://backend:3001'.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F5-T3"],
+          "criterio_done": "npm run dev sin Docker sigue funcionando. docker compose up redirige /api al contenedor backend correctamente."
+        },
+        {
+          "id": "F5-T6",
+          "titulo": "Crear .github/workflows/deploy.yml",
+          "descripcion": "Jobs: typecheck (backend + frontend) → test → deploy (solo en push a main). Deploy usa railway CLI con RAILWAY_TOKEN. El frontend pasa VITE_API_URL como build-arg.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F5-T1", "F5-T2"],
+          "criterio_done": "Push a main dispara el pipeline. Si typecheck falla, deploy no corre. Si todo pasa, Railway muestra el deploy como activo."
+        },
+        {
+          "id": "F5-T7",
+          "titulo": "Crear proyecto Railway y configurar servicios N1",
+          "descripcion": "Crear proyecto 'cotizador-dryada' en Railway. Crear servicio backend (root: backend/) y frontend (root: frontend/). Configurar variables de entorno SMTP y VITE_API_URL. Generar dominios públicos.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F5-T1", "F5-T2"],
+          "criterio_done": "Ambos servicios en estado Active en Railway. GET /api/materials desde la URL pública retorna materiales."
+        },
+        {
+          "id": "F5-T8",
+          "titulo": "Configurar secretos en GitHub",
+          "descripcion": "Crear Secret RAILWAY_TOKEN y Variable RAILWAY_BACKEND_URL en GitHub → Settings → Secrets and variables → Actions.",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F5-T7"],
+          "criterio_done": "El workflow de GitHub Actions puede autenticarse con Railway sin errores de token."
+        },
+        {
+          "id": "F5-T9",
+          "titulo": "Verificar primer deploy exitoso",
+          "descripcion": "Seguir el checklist de la sección 6 de specs/infra-deploy-sdd.md. Subir un STL de prueba desde la URL pública. Verificar que el email de cotización llega.",
+          "estado": "pending",
+          "prioridad": "critica",
+          "dependencias": ["F5-T7", "F5-T8"],
+          "criterio_done": "Flujo completo end-to-end desde la URL pública de Railway: upload STL → cotización → PDF → email."
+        },
+        {
+          "id": "F5-T10",
+          "titulo": "Agregar endpoint /health en el backend",
+          "descripcion": "GET /health que retorna { status: 'ok' }. Railway usa este endpoint para validar que el deploy fue exitoso antes de redirigir tráfico.",
+          "estado": "pending",
+          "prioridad": "media",
+          "dependencias": ["F1-T1"],
+          "criterio_done": "GET /health retorna 200 { status: 'ok' }. Configurado como healthcheck en Railway."
+        }
+      ]
+    }
+  ],
   "areas_de_atencion": [
     {
       "id": "AA-1",
