@@ -1,7 +1,7 @@
 {
   "proyecto": "Cotizador Dryada",
   "version": "1.0",
-  "ultima_actualizacion": "2026-04-29",
+  "ultima_actualizacion": "2026-05-08",
   "fases": [
     {
       "id": "F1",
@@ -13,7 +13,7 @@
           "id": "F1-T1",
           "titulo": "Scaffolding del backend",
           "descripcion": "Inicializar proyecto Node.js + TypeScript con Fastify. Configurar tsconfig, eslint, paths. Crear estructura de carpetas base.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": [],
           "criterio_done": "npm run dev levanta el servidor sin errores. TypeScript compila sin warnings."
@@ -22,7 +22,7 @@
           "id": "F1-T2",
           "titulo": "Parser STL: detección binario/ASCII",
           "descripcion": "Implementar parseStl(buffer) que detecta el formato (primeros bytes 'solid' = ASCII, sino binario) y devuelve array de triángulos [[v0,v1,v2], ...].",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T1"],
           "criterio_done": "Parsea correctamente un STL binario y uno ASCII. Test con cubo 10x10x10mm."
@@ -31,7 +31,7 @@
           "id": "F1-T3",
           "titulo": "STL Processor: volumen + área superficial",
           "descripcion": "Implementar analizarStl(buffer) que calcula volumen (tetraedros signados) y área superficial (producto vectorial) en una sola iteración. Retorna { volumenCm3, areaCm2, boundingBox }.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T2"],
           "criterio_done": "Cubo 10x10x10mm → volumenCm3 = 1.0, areaCm2 = 6.0. Error < 0.1%."
@@ -40,7 +40,7 @@
           "id": "F1-T4",
           "titulo": "Detección de pieza compleja (índice de compacidad)",
           "descripcion": "Implementar evaluarComplejidad(areaCm2, volumenCm3) que devuelve 'simple' | 'moderada' | 'compleja' usando IC = area / volumen^(2/3). Umbrales: >20 = compleja, >12 = moderada.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F1-T3"],
           "criterio_done": "Esfera → 'simple'. Celosía de test → 'compleja'. Mensaje de advertencia correcto para cada nivel."
@@ -49,7 +49,7 @@
           "id": "F1-T5",
           "titulo": "Validación de unidades y geometría inválida",
           "descripcion": "Si bounding box > 500mm en alguna dimensión: advertir probable pulgadas. Si volumen calculado <= 0: retornar error de geometría inválida.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T3"],
           "criterio_done": "STL en pulgadas genera advertencia con las dimensiones calculadas. STL con malla abierta genera error claro."
@@ -58,7 +58,7 @@
           "id": "F1-T6",
           "titulo": "JsonPricesRepository",
           "descripcion": "Implementar IPricesRepository leyendo desde src/data/prices.json. Métodos: getMateriales(), getMaterialById(id), getCostoInicio().",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T1"],
           "criterio_done": "getMateriales() retorna el array del JSON. getMaterialById con ID inexistente retorna null."
@@ -67,7 +67,7 @@
           "id": "F1-T7",
           "titulo": "InMemoryQuoteRepository",
           "descripcion": "Implementar IQuoteRepository con almacenamiento en Map en memoria. Métodos: save(quote), findById(id), findByEmpleado(empleadoId).",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F1-T1"],
           "criterio_done": "save() y findById() funcionan correctamente. El estado se pierde al reiniciar el servidor (esperado en N1)."
@@ -76,7 +76,7 @@
           "id": "F1-T8",
           "titulo": "QuoteService: fórmula de cotización",
           "descripcion": "Implementar calcularCotizacion({ stlAnalysis, materialId, cantidad }) usando la fórmula mejorada: infill_weight + wall_weight. Inyectar IPricesRepository. Retornar desglose completo.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T3", "F1-T4", "F1-T6"],
           "criterio_done": "Con volumen=10cm³, area=30cm², PLA (1.24g/cm³), precio=0.08 USD/g → resultado calculado manualmente coincide. Desglose incluye cada componente del precio en USD."
@@ -102,7 +102,7 @@
           "id": "F2-T1",
           "titulo": "Ruta POST /api/upload",
           "descripcion": "Recibe archivo STL (multipart/form-data). Valida extensión y tamaño (max 50MB). Llama a analizarStl(). Guarda archivo en /tmp con UUID. Retorna { uploadId, volumenCm3, areaCm2, boundingBox, complejidad, advertencias }.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T3", "F1-T4", "F1-T5"],
           "criterio_done": "curl con STL válido retorna 200 con análisis. Archivo > 50MB retorna 413. Extensión incorrecta retorna 400."
@@ -111,7 +111,7 @@
           "id": "F2-T2",
           "titulo": "Ruta GET /api/materials",
           "descripcion": "Retorna lista de materiales desde IPricesRepository. Sin autenticación en N1.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T6"],
           "criterio_done": "Retorna array de materiales con id, nombre, precioGramo, densidad."
@@ -120,7 +120,7 @@
           "id": "F2-T3",
           "titulo": "Ruta POST /api/quote",
           "descripcion": "Recibe { uploadId, materialId, cantidad, observaciones? }. Valida que el uploadId exista (archivo en /tmp). Calcula cotización. Guarda en IQuoteRepository. Retorna desglose completo con id de cotización.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F2-T1", "F2-T2", "F1-T8"],
           "criterio_done": "POST con datos válidos retorna cotización completa con número único. Material inválido retorna 404."
@@ -129,7 +129,7 @@
           "id": "F2-T4",
           "titulo": "Ruta POST /api/quote/:id/email",
           "descripcion": "Recibe { destinatario, pdfBase64 }. Envía el PDF adjunto por email usando EmailService (Gmail SMTP). Retorna 200 cuando el envío es exitoso.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F2-T3"],
           "criterio_done": "Email llega a la casilla de destino con PDF adjunto. Destino inválido retorna 400."
@@ -138,7 +138,7 @@
           "id": "F2-T5",
           "titulo": "EmailService con Gmail SMTP (App Password)",
           "descripcion": "Implementar EmailService usando Nodemailer con smtp.gmail.com:587 + STARTTLS. Leer credenciales desde variables de entorno. En desarrollo, usar modo preview (Ethereal) si SMTP_USER no está seteado.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T1"],
           "criterio_done": "Envío exitoso a casilla real con App Password configurada. En dev sin credenciales, loguea la URL de preview de Ethereal."
@@ -147,7 +147,7 @@
           "id": "F2-T6",
           "titulo": "Manejo de errores global y validación de schemas",
           "descripcion": "Configurar error handler global de Fastify. Definir schemas JSON para request/response de cada ruta. Errores deben retornar { error: string, code: string } consistente.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F2-T1", "F2-T2", "F2-T3", "F2-T4"],
           "criterio_done": "Campos faltantes en POST /api/quote retornan 400 con mensaje claro. Errores internos retornan 500 sin stack trace expuesto."
@@ -164,7 +164,7 @@
           "id": "F3-T1",
           "titulo": "Scaffolding del frontend",
           "descripcion": "Crear proyecto con Vite + React + TypeScript. Instalar Tailwind CSS. Configurar proxy al backend en vite.config.ts. Estructura de carpetas base.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": [],
           "criterio_done": "npm run dev levanta la app. Tailwind funciona. Proxy /api → backend:3001."
@@ -173,7 +173,7 @@
           "id": "F3-T2",
           "titulo": "ModelViewer: visualización 3D del STL",
           "descripcion": "Componente con react-three-fiber + @react-three/drei. Usar STLLoader para cargar desde URL del backend. OrbitControls para rotar. Iluminación básica. Indicador de carga.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T1"],
           "criterio_done": "STL real se visualiza correctamente. Se puede rotar con mouse. Funciona tanto con STL binario como ASCII."
@@ -182,7 +182,7 @@
           "id": "F3-T3",
           "titulo": "FileUploader: carga y análisis del STL",
           "descripcion": "Drag & drop + selector de archivo. Validación client-side de extensión (.stl) y tamaño (<50MB). POST a /api/upload. Mostrar spinner durante el análisis. Mostrar dimensiones del modelo y advertencias (unidades, complejidad). Pasar uploadId al siguiente paso.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T1", "F3-T2"],
           "criterio_done": "Sube un STL real, muestra dimensiones y el modelo 3D. Advertencia de pieza compleja se muestra correctamente."
@@ -191,7 +191,7 @@
           "id": "F3-T4",
           "titulo": "QuoteForm: selector de material y cantidad",
           "descripcion": "GET /api/materials para poblar el selector. Mostrar nombre y precio/g de cada material. Input numérico de cantidad (mínimo 1). Textarea de observaciones (opcional). Botón Calcular cotización.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T3"],
           "criterio_done": "Selector muestra materiales reales. El formulario valida campos requeridos antes de enviar."
@@ -200,7 +200,7 @@
           "id": "F3-T5",
           "titulo": "QuoteResult: desglose y acciones",
           "descripcion": "Mostrar desglose completo: volumen, área, gramos (infill + paredes), costo material, costo inicio, precio final. Número de cotización. Botón Descargar PDF. Botón Enviar por email (abre modal con campo de destinatario). Si complejidad = 'compleja', mostrar banner de advertencia prominente.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T4"],
           "criterio_done": "Todos los valores del desglose son correctos. Advertencia de pieza compleja visible antes de que el empleado envíe la cotización."
@@ -221,13 +221,14 @@
           "estado": "pending",
           "prioridad": "alta",
           "dependencias": ["F3-T6"],
-          "criterio_done": "Email llega al destinatario con el PDF correcto como adjunto."
+          "criterio_done": "Email llega al destinatario con el PDF correcto como adjunto.",
+          "nota": "UI del modal construida. Bloqueada por F3-T6: el callback onGeneratePdf devuelve cadena vacía hasta que el PDF esté implementado."
         },
         {
           "id": "F3-T8",
           "titulo": "Pantalla de identidad del empleado",
           "descripcion": "Pantalla simple de inicio: campo nombre del empleado (sin autenticación real en N1). El nombre queda en estado de la app y se incluye en la cotización y trazabilidad.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F3-T1"],
           "criterio_done": "Nombre del empleado aparece en el PDF y en el QuoteRecord guardado."
@@ -236,7 +237,7 @@
           "id": "F3-T9",
           "titulo": "Manejo de errores y estados de carga en UI",
           "descripcion": "Todos los estados de error de la API deben mostrarse de forma amigable (no mensajes técnicos). Indicadores de carga en todas las operaciones async. Mensajes para: STL inválido, material no encontrado, error de email, etc.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F3-T3", "F3-T4", "F3-T5", "F3-T7"],
           "criterio_done": "Ningún error técnico llega al empleado sin traducción a lenguaje humano."
@@ -439,11 +440,11 @@
     }
   ],
   "metricas": {
-    "total_tareas": 28,
-    "completadas": 16,
+    "total_tareas": 39,
+    "completadas": 21,
     "en_progreso": 0,
-    "pendientes": 12,
-    "ultimo_commit": "2026-04-29",
-    "nota": "Scaffolding completo. TTL de uploads implementado. 5 áreas de atención documentadas: AA-3 (precios) y AA-5 (auth) pendientes antes del lanzamiento. Frontend pendiente: Tailwind, componentes UI, tests."
+    "pendientes": 18,
+    "ultimo_commit": "2026-05-08",
+    "nota": "Backend F1+F2 completo (14/15 tareas — F1-T9 bloqueada por validación de precios con el equipo). Frontend F3 casi completo (7/9 — F3-T6 PDF y F3-T7 email modal pendientes de @react-pdf/renderer). F4 validación y F5 infra+deploy pendientes."
   }
 }

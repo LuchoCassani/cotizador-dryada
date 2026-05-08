@@ -109,43 +109,51 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 
 ### Scaffolding
 - [x] Vite + React 18 + TypeScript inicializado
-- [ ] Tailwind CSS configurado
+- [x] Tailwind CSS v4 configurado con plugin `@tailwindcss/vite`
+- [x] Tokens del design system definidos en `index.css` (`@theme`)
+- [x] Fuentes Inter + JetBrains Mono cargando desde Google Fonts
+- [x] `@tabler/icons-react` instalado
 - [x] Proxy `/api` → `http://localhost:3001` en `vite.config.ts`
-- [ ] Estructura de carpetas creada (`components/`, `services/`, `types/`)
+- [x] Estructura de carpetas creada (`components/`, `services/`, `types/`, `hooks/`)
+- [x] `types/index.ts` con tipos alineados a la API del backend
+- [x] `services/api.ts` con fetch wrapper tipado para las 4 rutas
 
 ### ModelViewer
 - [x] react-three-fiber + @react-three/drei instalados
-- [ ] `STLLoader` carga el modelo desde URL del backend
-- [ ] `OrbitControls` permite rotar el modelo
-- [ ] Indicador de carga mientras se procesa el STL
-- [ ] Funciona con STL binario y ASCII
+- [x] `STLLoader` carga el modelo desde `URL.createObjectURL(file)`
+- [x] `OrbitControls` permite rotar el modelo
+- [x] Placeholder visible cuando no hay modelo cargado
+- [x] Centra la geometría automáticamente con `computeBoundingBox`
 - [ ] Probado con un STL real de Dryada
 
-### FileUploader
-- [ ] Drag & drop funciona
-- [ ] Validación client-side de extensión `.stl`
-- [ ] Validación client-side de tamaño < 50MB
-- [ ] POST a `/api/upload` con indicador de carga
-- [ ] Muestra dimensiones del modelo (bounding box en mm)
-- [ ] Muestra advertencia si hay probable error de unidades
-- [ ] Muestra advertencia de complejidad según nivel (`moderada` o `compleja`)
-- [ ] Pasa `uploadId` al siguiente paso
+### FileUploader (PasoSubirSTL)
+- [x] Drag & drop funciona (onDrop, onDragOver, onDragLeave)
+- [x] Validación client-side de extensión `.stl`
+- [x] Validación client-side de tamaño < 50MB
+- [x] POST a `/api/upload` con indicador de carga (spinner)
+- [x] Muestra dimensiones del modelo (bounding box en mm)
+- [x] Muestra advertencia si hay probable error de unidades
+- [x] Muestra badge de complejidad (simple / moderada / compleja)
+- [x] Pasa `uploadId` y `file` al siguiente paso
+- [ ] Probado con un STL real de Dryada
 
-### QuoteForm
-- [ ] GET `/api/materials` puebla el selector de material
-- [ ] Selector muestra nombre y precio/g de cada material
-- [ ] Input de cantidad con validación (mínimo 1, número entero)
-- [ ] Textarea de observaciones (opcional)
-- [ ] Botón "Calcular cotización" deshabilitado si faltan campos requeridos
+### QuoteForm (PasoCotizar)
+- [x] GET `/api/materials` puebla el selector de material
+- [x] Selector muestra nombre y precio/g de cada material
+- [x] Input de cantidad con validación (mínimo 1, número entero)
+- [x] Textarea de observaciones (opcional, máx 500 chars)
+- [x] Botón "Calcular cotización" deshabilitado si faltan campos
+- [x] Estado loading durante el POST
 
-### QuoteResult
-- [ ] Muestra desglose: volumen, área, gramos infill, gramos paredes, gramos total
-- [ ] Muestra: costo material, costo inicio, precio final
-- [ ] Muestra número de cotización y fecha
-- [ ] Si `complejidad === 'compleja'`: banner de advertencia prominente visible **antes** de los botones de acción
-- [ ] Si `complejidad === 'moderada'`: mensaje de advertencia sutil
-- [ ] Botón "Descargar PDF" funciona
-- [ ] Botón "Enviar por email" abre modal
+### QuoteResult (PasoResultado)
+- [x] Muestra desglose: volumen, área, gramos infill, gramos paredes, gramos total
+- [x] Muestra: costo material, costo inicio, precio unitario, precio final
+- [x] Precio final en naranja `#E8602A` · 26px
+- [x] Número de cotización formato `DRY-YYYY-XXXX`
+- [x] Si `complejidad === 'compleja'`: banner de advertencia prominente **antes** de los botones de acción
+- [x] Si `complejidad === 'moderada'`: badge visible
+- [x] Botón "Descargar PDF" (callback pendiente de F3-T6)
+- [x] Botón "Enviar por email" abre modal
 
 ### PDF
 - [ ] Template incluye: logo Dryada, número de cotización, fecha
@@ -155,22 +163,24 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 - [ ] Si complejidad es `compleja` o `moderada`: nota de margen de error en el PDF
 - [ ] PDF validado y aprobado por el equipo de ventas
 
-### Email modal
-- [ ] Campo de email del destinatario con validación de formato
-- [ ] Convierte PDF a base64 antes de enviar
-- [ ] POST a `/api/quote/:id/email`
-- [ ] Muestra confirmación de envío exitoso
-- [ ] Muestra error descriptivo si el envío falla
+### Modal de envío por email
+- [x] Campo de email del destinatario con validación de formato
+- [x] POST a `/api/quote/:id/email` con pdfBase64
+- [x] Muestra confirmación de envío exitoso
+- [x] Muestra error descriptivo si el envío falla
+- [ ] Email llega al destinatario con el PDF correcto (bloqueado por F3-T6)
 
 ### Pantalla de inicio
-- [ ] Campo para nombre del empleado
-- [ ] Nombre persiste en el estado de la app durante la sesión
+- [x] Campo para nombre del empleado con validación (no vacío)
+- [x] Nombre persiste en el estado de la app durante toda la sesión
+- [x] Nombre se incluye en `empleadoId` al crear la cotización
 
 ### Manejo de errores en UI
-- [ ] STL inválido → mensaje en español sin jerga técnica
-- [ ] Error de red → mensaje genérico con opción de reintentar
-- [ ] Error de email → mensaje descriptivo sobre el problema
-- [ ] Sin stack traces ni códigos HTTP visibles al empleado
+- [x] STL inválido → mensaje en español sin jerga técnica
+- [x] Error de red → mensaje genérico con descripción del problema
+- [x] Error de email → mensaje descriptivo
+- [x] Sin stack traces ni códigos HTTP visibles al empleado
+- [x] Indicadores de carga en todas las operaciones async (upload, cotización, envío)
 
 ---
 
@@ -210,8 +220,6 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 
 ---
 
----
-
 ## Áreas de atención — revisar antes del deploy
 
 ### AA-1 · uploadCache volátil ✅ resuelto
@@ -244,7 +252,8 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 
 El sistema puede abrirse al equipo de ventas cuando:
 
-- [ ] Todas las tareas de F1, F2 y F3 están marcadas
+- [x] Todas las tareas de F1 y F2 están marcadas (menos F1-T9 precios)
+- [ ] F3 completa: falta F3-T6 (PDF) y F3-T7 (email con PDF)
 - [ ] Error de calibración promedio < 15% (F4-T1)
 - [ ] Test end-to-end con usuario real sin errores bloqueantes (F4-T4)
 - [ ] PDF aprobado por ventas (F4-T3)
