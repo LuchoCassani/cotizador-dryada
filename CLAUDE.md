@@ -22,6 +22,7 @@ Actualmente estamos en **Nivel 1**.
 Leer estos archivos antes de implementar cualquier feature:
 
 - `specs/cotizador-dryada-sdd.md` — Arquitectura, fórmulas, decisiones de diseño
+- `specs/design-system.md` — **Fuente de verdad visual**: colores, tipografía, componentes, tokens Tailwind, iconografía y flujo de pantallas. Leer antes de tocar cualquier archivo de UI.
 - `rules.md` — Restricciones de diseño que se deben respetar
 - `tasks.json` — Tareas del proyecto con estado y criterios de done
 - `checklist.md` — Checklist de validación por fase
