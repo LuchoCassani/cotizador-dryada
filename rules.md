@@ -70,6 +70,20 @@ El backend solo recibe el PDF como base64 y lo adjunta al email. La generación 
 
 ---
 
+## Seguridad y operación
+
+**R18 — No exponer el servidor fuera de la red interna sin autenticación.**
+La herramienta es interna. Sin auth, `/api/upload` acepta archivos de 50 MB desde cualquier origen. Antes de exponerla fuera de la red privada (aunque sea por error de configuración de infra), agregar:
+- `@fastify/rate-limit` para limitar requests por IP
+- Autenticación básica con token Bearer estático compartido entre el frontend y el backend
+
+No es bloqueante para el lanzamiento interno. Sí es bloqueante antes de cualquier exposición a internet.
+
+**R19 — El deploy del N1 está bloqueado hasta confirmar prices.json con el equipo.**
+Los valores en `backend/src/data/prices.json` son placeholders. Ningún deploy a producción ocurre hasta que el equipo de ventas o producción valide y apruebe los precios reales en USD. Registrar la aprobación (email o comentario en el PR).
+
+---
+
 ## Extensibilidad
 
 **R15 — No optimizar para N2/N3 desde N1, pero no cerrar la puerta.**

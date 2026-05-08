@@ -30,7 +30,7 @@ export const quoteRoute: FastifyPluginAsync = async (fastify) => {
 
     const stlAnalysis = uploadCache.get(uploadId);
     if (!stlAnalysis) {
-      return reply.status(404).send({ error: 'Upload no encontrado. Subir el archivo nuevamente.', code: 'UPLOAD_NOT_FOUND' });
+      return reply.status(404).send({ error: 'El archivo ya no está disponible (puede haber expirado). Por favor volvé a subir el STL.', code: 'UPLOAD_NOT_FOUND' });
     }
 
     let result;

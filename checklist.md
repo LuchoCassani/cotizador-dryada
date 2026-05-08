@@ -210,12 +210,43 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 
 ---
 
+---
+
+## Áreas de atención — revisar antes del deploy
+
+### AA-1 · uploadCache volátil ✅ resuelto
+- [x] TTL de 30 minutos implementado en `upload.route.ts`
+- [x] Limpieza activa de `/tmp` y del Map al expirar
+- [x] Mensaje de error explícito al usuario cuando el upload expiró
+
+### AA-2 · Limpieza de /tmp ✅ resuelto
+- [x] `programarLimpieza(uploadId)` con `setTimeout` de 30 min
+- [x] No depende de reinicios del servidor
+
+### AA-3 · prices.json sin confirmar 🔴 bloqueante para deploy
+- [ ] Reunión con equipo de ventas/producción para definir precios reales
+- [ ] `backend/src/data/prices.json` actualizado con valores reales en USD
+- [ ] Aprobación explícita del equipo documentada (email o firma)
+- [ ] Tarea F1-T9 marcada como `completed` en tasks.json
+
+### AA-4 · PDF en frontend — nota para N3 📋 documentado
+- [ ] Al planificar N3: evaluar mover generación de PDF al backend
+- [ ] Considerar PDFKit o Puppeteer en el servidor para soportar historial y automatizaciones
+
+### AA-5 · Sin auth ni rate limiting 🔶 antes de exponer a internet
+- [ ] Agregar `@fastify/rate-limit` al servidor
+- [ ] Agregar autenticación básica (token Bearer estático) antes de exponer fuera de la red interna
+- [ ] No bloqueante para lanzamiento interno en red privada
+
+---
+
 ## Criterio de lanzamiento
 
 El sistema puede abrirse al equipo de ventas cuando:
 
-- [x] Todas las tareas de F1, F2 y F3 están marcadas
-- [x] Error de calibración promedio < 15% (F4-T1)
-- [x] Test end-to-end con usuario real sin errores bloqueantes (F4-T4)
-- [x] PDF aprobado por ventas (F4-T3)
-- [x] Gmail funcionando en producción (F4-T5)
+- [ ] Todas las tareas de F1, F2 y F3 están marcadas
+- [ ] Error de calibración promedio < 15% (F4-T1)
+- [ ] Test end-to-end con usuario real sin errores bloqueantes (F4-T4)
+- [ ] PDF aprobado por ventas (F4-T3)
+- [ ] Gmail funcionando en producción (F4-T5)
+- [ ] **prices.json validado por el equipo (AA-3)** ← bloqueante

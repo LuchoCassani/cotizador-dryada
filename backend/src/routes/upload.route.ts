@@ -1,6 +1,22 @@
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
 import { FastifyPluginAsync } from 'fastify';
 import { uploadCache } from '../app';
 import { analizarStl } from '../services/stl-processor';
+
+const UPLOAD_TTL_MS = 30 * 60 * 1000; // 30 minutos
+
+function programarLimpieza(uploadId: string): void {
+  setTimeout(async () => {
+    uploadCache.delete(uploadId);
+    try {
+      await fs.unlink(path.join(os.tmpdir(), `${uploadId}.stl`));
+    } catch {
+      // El archivo puede haber sido eliminado antes por otro proceso
+    }
+  }, UPLOAD_TTL_MS);
+}
 
 export const uploadRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/upload', async (request, reply) => {
@@ -25,6 +41,7 @@ export const uploadRoute: FastifyPluginAsync = async (fastify) => {
     }
 
     uploadCache.set(analysis.uploadId, analysis);
+    programarLimpieza(analysis.uploadId);
 
     return reply.send({
       uploadId: analysis.uploadId,

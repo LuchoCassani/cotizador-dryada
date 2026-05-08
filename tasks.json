@@ -297,12 +297,53 @@
       ]
     }
   ],
+  "areas_de_atencion": [
+    {
+      "id": "AA-1",
+      "titulo": "uploadCache volátil entre reinicios",
+      "estado": "resuelto_parcialmente",
+      "descripcion": "El cache de uploads vive en memoria. Un reinicio del servidor invalida todos los uploadId pendientes. Se implementó TTL de 30 minutos con limpieza activa de /tmp y del Map. El error devuelto al usuario ya es explícito ('El archivo ya no está disponible, por favor volvé a subir el STL').",
+      "accion_pendiente": "Ninguna para N1. En N2 evaluar persistir el uploadId en Redis si se quiere tolerar reinicios."
+    },
+    {
+      "id": "AA-2",
+      "titulo": "Limpieza pasiva de /tmp",
+      "estado": "resuelto",
+      "descripcion": "Implementado TTL activo de 30 minutos en upload.route.ts: setTimeout que borra el archivo de /tmp y el entry del Map. Predecible y no depende de reinicios del servidor.",
+      "accion_pendiente": "Ninguna para N1."
+    },
+    {
+      "id": "AA-3",
+      "titulo": "prices.json con valores sin confirmar — bloqueante para deploy",
+      "estado": "pending",
+      "descripcion": "Los precios actuales en prices.json son placeholders (PLA: $0.08/g, costoInicio: $5). La tarea F1-T9 requiere validación explícita del equipo de ventas/producción. El deploy del N1 está bloqueado hasta que ese JSON esté firmado.",
+      "accion_pendiente": "Reunión con el equipo para definir precios reales. Actualizar prices.json. Marcar F1-T9 como done. Sin esto no se abre a ventas.",
+      "prioridad": "critica",
+      "bloquea_deploy": true
+    },
+    {
+      "id": "AA-4",
+      "titulo": "PDF generado en el frontend — trade-off para N3",
+      "estado": "documentado",
+      "descripcion": "El PDF se genera en el cliente con @react-pdf/renderer (regla R14). En N1 es correcto. El riesgo aparece en N3 (historial completo): regenerar un PDF histórico o enviar email desde un proceso automatizado requeriría mover el renderizado al backend.",
+      "accion_pendiente": "No hacer nada en N1/N2. Al planificar N3, evaluar mover la generación de PDF al backend (PDFKit o Puppeteer) y usar @react-pdf/renderer solo como preview en el cliente."
+    },
+    {
+      "id": "AA-5",
+      "titulo": "Sin autenticación ni rate limiting",
+      "estado": "pending",
+      "descripcion": "La herramienta es interna y está pensada para red privada. Sin embargo /api/upload acepta archivos de 50MB sin auth, lo que es un vector de abuso si queda expuesta a internet.",
+      "accion_pendiente": "Antes de exponer fuera de la red interna: agregar autenticación básica (header Bearer con token estático compartido es suficiente para N1) y rate limiting de Fastify (@fastify/rate-limit). No es bloqueante para el lanzamiento interno.",
+      "prioridad": "alta",
+      "bloquea_deploy": false
+    }
+  ],
   "metricas": {
     "total_tareas": 28,
-    "completadas": 15,
+    "completadas": 16,
     "en_progreso": 0,
-    "pendientes": 13,
+    "pendientes": 12,
     "ultimo_commit": "2026-04-29",
-    "nota": "Scaffolding completo. Backend implementado (F1+F2 en código, pendientes tests). Frontend scaffoldeado con Vite+React18, dependencias 3D instaladas. Pendiente: Tailwind, componentes UI, tests manuales y confirmación de precios con el equipo."
+    "nota": "Scaffolding completo. TTL de uploads implementado. 5 áreas de atención documentadas: AA-3 (precios) y AA-5 (auth) pendientes antes del lanzamiento. Frontend pendiente: Tailwind, componentes UI, tests."
   }
 }
