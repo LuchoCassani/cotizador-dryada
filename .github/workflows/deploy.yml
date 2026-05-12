@@ -82,6 +82,7 @@ jobs:
         run: |
           railway up --service frontend \
             --build-arg VITE_API_URL=${{ vars.RAILWAY_BACKEND_URL }} \
+            --build-arg VITE_API_TOKEN=${{ secrets.API_TOKEN }} \
             --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

@@ -23,6 +23,8 @@ Leer estos archivos antes de implementar cualquier feature:
 
 - `specs/cotizador-dryada-sdd.md` — Arquitectura, fórmulas, decisiones de diseño
 - `specs/design-system.md` — **Fuente de verdad visual**: colores, tipografía, componentes, tokens Tailwind, iconografía y flujo de pantallas. Leer antes de tocar cualquier archivo de UI.
+- `specs/security-sdd.md` — Controles de seguridad implementados: auth, rate limiting, DoS protection, límites de payload. Leer antes de modificar rutas, middlewares o el parser STL.
+- `specs/infra-deploy-sdd.md` — Arquitectura de deploy en Railway, Dockerfiles, CI/CD.
 - `rules.md` — Restricciones de diseño que se deben respetar
 - `tasks.json` — Tareas del proyecto con estado y criterios de done
 - `checklist.md` — Checklist de validación por fase

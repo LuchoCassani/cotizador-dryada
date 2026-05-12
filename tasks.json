@@ -398,6 +398,88 @@
       ]
     }
   ],
+  "fases_seguridad": [
+    {
+      "id": "F6",
+      "nombre": "Seguridad y hardening",
+      "nivel": 1,
+      "descripcion": "Controles de seguridad implementados antes del deploy a Railway. Ver specs/security-sdd.md para el detalle completo de cada decisión.",
+      "tareas": [
+        {
+          "id": "F6-T1",
+          "titulo": "Rate limiting global y por endpoint",
+          "descripcion": "Instalar @fastify/rate-limit. Global: 60 req/min. POST /api/upload: 10 req/min. POST /api/quote/:id/email: 5 req/min. Respuesta 429 con mensaje en español.",
+          "estado": "completed",
+          "prioridad": "alta",
+          "dependencias": ["F2-T1", "F2-T4"],
+          "criterio_done": "Más de 10 uploads en un minuto desde la misma IP devuelve 429 con mensaje claro."
+        },
+        {
+          "id": "F6-T2",
+          "titulo": "Auth por Bearer token estático",
+          "descripcion": "Hook onRequest en Fastify que valida Authorization: Bearer <API_TOKEN> en todas las rutas /api/*. Sin API_TOKEN seteado → modo dev sin restricción. Frontend envía el token via VITE_API_TOKEN horneado en build.",
+          "estado": "completed",
+          "prioridad": "alta",
+          "dependencias": ["F2-T1"],
+          "criterio_done": "Request sin header Authorization a /api/materials devuelve 401 cuando API_TOKEN está configurado."
+        },
+        {
+          "id": "F6-T3",
+          "titulo": "Protección contra DoS en parser STL",
+          "descripcion": "Límite de 5 millones de triángulos en parseBinary() antes de entrar al loop. Previene que un header malicioso de 84 bytes fuerce la allocación de gigabytes de RAM.",
+          "estado": "completed",
+          "prioridad": "critica",
+          "dependencias": ["F1-T2"],
+          "criterio_done": "STL binario con numTriangles > 5M devuelve error 422 con mensaje descriptivo."
+        },
+        {
+          "id": "F6-T4",
+          "titulo": "Límite de entradas en uploadCache",
+          "descripcion": "Subclass de Map con evicción FIFO al superar 200 entradas simultáneas. Previene consumo ilimitado de RAM por uploads masivos.",
+          "estado": "completed",
+          "prioridad": "alta",
+          "dependencias": ["F2-T1"],
+          "criterio_done": "El Map nunca supera 200 entradas; la más antigua se elimina al insertar la 201."
+        },
+        {
+          "id": "F6-T5",
+          "titulo": "Límites de tamaño en schemas JSON",
+          "descripcion": "maxLength en pdfBase64 (~20MB), observaciones (500 chars), empleadoId (100 chars), destinatario (254 chars — RFC 5321). Previene payloads arbitrariamente grandes.",
+          "estado": "completed",
+          "prioridad": "alta",
+          "dependencias": ["F2-T3", "F2-T4"],
+          "criterio_done": "POST con pdfBase64 de 25MB devuelve 400 por violación de schema."
+        },
+        {
+          "id": "F6-T6",
+          "titulo": "Sanitizar mensajes de error de Nodemailer",
+          "descripcion": "El catch en email.route.ts no reenvía el mensaje original de Nodemailer al cliente. Previene filtrado de información interna (hostname SMTP, estado TLS, credenciales parciales).",
+          "estado": "completed",
+          "prioridad": "media",
+          "dependencias": ["F2-T4"],
+          "criterio_done": "Error de SMTP devuelve mensaje genérico al cliente; el error real aparece solo en logs del servidor."
+        },
+        {
+          "id": "F6-T7",
+          "titulo": "Security headers HTTP en nginx",
+          "descripcion": "X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy y Content-Security-Policy configurados en nginx.conf del frontend.",
+          "estado": "completed",
+          "prioridad": "media",
+          "dependencias": ["F5-T2"],
+          "criterio_done": "curl -I sobre la URL del frontend muestra los 5 headers de seguridad."
+        },
+        {
+          "id": "F6-T8",
+          "titulo": "Configurar API_TOKEN en Railway y GitHub",
+          "descripcion": "Generar token con 'openssl rand -hex 32'. Setearlo como API_TOKEN en Railway → backend → Variables y como Secret API_TOKEN en GitHub Actions (para el build-arg del frontend).",
+          "estado": "pending",
+          "prioridad": "alta",
+          "dependencias": ["F6-T2", "F5-T7"],
+          "criterio_done": "El frontend en producción puede llamar a la API. Una request sin token desde curl devuelve 401."
+        }
+      ]
+    }
+  ],
   "areas_de_atencion": [
     {
       "id": "AA-1",
@@ -432,20 +514,20 @@
     {
       "id": "AA-5",
       "titulo": "Sin autenticación ni rate limiting",
-      "estado": "pending",
-      "descripcion": "La herramienta es interna y está pensada para red privada. Sin embargo /api/upload acepta archivos de 50MB sin auth, lo que es un vector de abuso si queda expuesta a internet.",
-      "accion_pendiente": "Antes de exponer fuera de la red interna: agregar autenticación básica (header Bearer con token estático compartido es suficiente para N1) y rate limiting de Fastify (@fastify/rate-limit). No es bloqueante para el lanzamiento interno.",
+      "estado": "resuelto",
+      "descripcion": "Resuelto en F6: rate limiting global + por endpoint (@fastify/rate-limit), Bearer token estático (API_TOKEN env), límites de payload en schemas, DoS protection en parser STL, límite de uploadCache, security headers en nginx. Ver specs/security-sdd.md.",
+      "accion_pendiente": "F6-T8: configurar API_TOKEN en Railway y GitHub antes del primer deploy.",
       "prioridad": "alta",
       "bloquea_deploy": false
     }
   ],
   "ultima_actualizacion": "2026-05-12",
   "metricas": {
-    "total_tareas": 39,
-    "completadas": 30,
+    "total_tareas": 47,
+    "completadas": 37,
     "en_progreso": 0,
-    "pendientes": 9,
+    "pendientes": 10,
     "ultimo_commit": "2026-05-12",
-    "nota": "Backend F1+F2 completo (14/15 — F1-T9: prices.json con datos ficticios para testing). Frontend F3 completo (9/9). Infra F5 casi completa (7/10 en código — T7/T8/T9 requieren Railway + GitHub setup manual). Pendiente: F4 calibración, F5-T7/T8/T9 deploy real."
+    "nota": "Backend F1+F2 completo. Frontend F3 completo. Infra F5 (7/10 en código). Seguridad F6 (7/8 — F6-T8 requiere configuración en Railway/GitHub). Pendiente: F4 calibración física, F5-T7/T8/T9 y F6-T8 deploy real, F1-T9 precios reales."
   }
 }

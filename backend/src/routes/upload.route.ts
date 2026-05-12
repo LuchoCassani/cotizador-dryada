@@ -18,8 +18,21 @@ function programarLimpieza(uploadId: string): void {
   }, UPLOAD_TTL_MS);
 }
 
+const MAX_TRIANGLES = 5_000_000; // ~250MB de STL binario; por encima es DoS territory
+
 export const uploadRoute: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/api/upload', async (request, reply) => {
+  fastify.post('/api/upload', {
+    config: {
+      rateLimit: {
+        max: 10,          // máximo 10 uploads por minuto por IP
+        timeWindow: 60_000,
+        errorResponseBuilder: () => ({
+          error: 'Demasiados archivos subidos. Esperá un minuto antes de reintentar.',
+          code: 'RATE_LIMIT_EXCEEDED',
+        }),
+      },
+    },
+  }, async (request, reply) => {
     const data = await request.file();
 
     if (!data) {

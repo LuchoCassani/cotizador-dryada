@@ -23,8 +23,15 @@ function isBinaryStl(buffer: Buffer): boolean {
   return buffer.length === 84 + numTriangles * 50;
 }
 
+const MAX_TRIANGLES = 5_000_000;
+
 function parseBinary(buffer: Buffer): Triangle[] {
   const numTriangles = buffer.readUInt32LE(80);
+
+  if (numTriangles > MAX_TRIANGLES) {
+    throw new Error(`El archivo tiene demasiada geometría (${numTriangles.toLocaleString()} triángulos). El límite es ${MAX_TRIANGLES.toLocaleString()}.`);
+  }
+
   const triangles: Triangle[] = [];
   let offset = 84;
 

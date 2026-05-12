@@ -10,5 +10,17 @@ export const quoteRepo    = new InMemoryQuoteRepository();
 export const quoteService = new QuoteService(pricesRepo, quoteRepo);
 export const emailService = new EmailService();
 
-// Cache en memoria de uploads pendientes de cotizar
-export const uploadCache  = new Map<string, StlAnalysis>();
+// Cache en memoria de uploads pendientes de cotizar.
+// Límite de 200 entradas simultáneas para evitar consumo ilimitado de RAM.
+const UPLOAD_CACHE_MAX = 200;
+
+export const uploadCache = new class extends Map<string, StlAnalysis> {
+  set(key: string, value: StlAnalysis) {
+    if (this.size >= UPLOAD_CACHE_MAX) {
+      // Eliminar la entrada más antigua (primer elemento del Map, que preserva orden de inserción)
+      const oldest = this.keys().next().value;
+      if (oldest) this.delete(oldest);
+    }
+    return super.set(key, value);
+  }
+}();
