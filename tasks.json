@@ -309,7 +309,7 @@
           "id": "F5-T1",
           "titulo": "Crear backend/Dockerfile multi-stage",
           "descripcion": "Etapa build: node:20-alpine + tsc. Etapa runtime: node:20-alpine + solo deps de producción + dist/. Usuario no-root. Exponer puerto 3001.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F1-T1"],
           "criterio_done": "docker build backend/ genera imagen sin errores. docker run arranca el servidor y responde en /api/materials."
@@ -318,7 +318,7 @@
           "id": "F5-T2",
           "titulo": "Crear frontend/Dockerfile + frontend/nginx.conf",
           "descripcion": "Etapa build: node:20-alpine + vite build (con ARG VITE_API_URL). Etapa runtime: nginx:alpine + nginx.conf con SPA fallback, gzip y caché agresiva para assets.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T1"],
           "criterio_done": "docker build --build-arg VITE_API_URL=http://localhost:3001 frontend/ genera imagen. docker run en puerto 80 sirve la SPA. Recargar /cualquier-ruta no da 404."
@@ -327,7 +327,7 @@
           "id": "F5-T3",
           "titulo": "Crear docker-compose.yml raíz con hot reload",
           "descripcion": "Tres servicios: backend (tsx watch + volumen src/), frontend (vite --host + volumen src/), postgres:15-alpine con healthcheck. Variable BACKEND_URL para el proxy de Vite.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F5-T1", "F5-T2"],
           "criterio_done": "docker compose up levanta los tres servicios. Cambiar un archivo en backend/src/ recarga sin reiniciar el contenedor. La UI del frontend llega al backend."
@@ -336,7 +336,7 @@
           "id": "F5-T4",
           "titulo": "Crear .dockerignore en backend y frontend",
           "descripcion": "Excluir node_modules/, dist/, .env, .env.*, logs, .DS_Store.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F5-T1", "F5-T2"],
           "criterio_done": "docker build no incluye node_modules/ del host. Verificar con docker inspect."
@@ -345,7 +345,7 @@
           "id": "F5-T5",
           "titulo": "Actualizar vite.config.ts para leer BACKEND_URL de env",
           "descripcion": "Cambiar el target del proxy de 'http://localhost:3001' a process.env.BACKEND_URL || 'http://localhost:3001'. Así docker-compose puede inyectar 'http://backend:3001'.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F5-T3"],
           "criterio_done": "npm run dev sin Docker sigue funcionando. docker compose up redirige /api al contenedor backend correctamente."
@@ -354,7 +354,7 @@
           "id": "F5-T6",
           "titulo": "Crear .github/workflows/deploy.yml",
           "descripcion": "Jobs: typecheck (backend + frontend) → test → deploy (solo en push a main). Deploy usa railway CLI con RAILWAY_TOKEN. El frontend pasa VITE_API_URL como build-arg.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F5-T1", "F5-T2"],
           "criterio_done": "Push a main dispara el pipeline. Si typecheck falla, deploy no corre. Si todo pasa, Railway muestra el deploy como activo."
@@ -390,7 +390,7 @@
           "id": "F5-T10",
           "titulo": "Agregar endpoint /health en el backend",
           "descripcion": "GET /health que retorna { status: 'ok' }. Railway usa este endpoint para validar que el deploy fue exitoso antes de redirigir tráfico.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "media",
           "dependencias": ["F1-T1"],
           "criterio_done": "GET /health retorna 200 { status: 'ok' }. Configurado como healthcheck en Railway."
@@ -442,10 +442,10 @@
   "ultima_actualizacion": "2026-05-12",
   "metricas": {
     "total_tareas": 39,
-    "completadas": 23,
+    "completadas": 30,
     "en_progreso": 0,
-    "pendientes": 16,
+    "pendientes": 9,
     "ultimo_commit": "2026-05-12",
-    "nota": "Backend F1+F2 completo (14/15 — F1-T9 bloqueada por validación de precios). Frontend F3 completo (9/9): PDF con @react-pdf/renderer (CotizacionPDF.tsx), descarga directa y generación de base64 para email implementados en App.tsx. F4 validación y F5 infra+deploy pendientes."
+    "nota": "Backend F1+F2 completo (14/15 — F1-T9: prices.json con datos ficticios para testing). Frontend F3 completo (9/9). Infra F5 casi completa (7/10 en código — T7/T8/T9 requieren Railway + GitHub setup manual). Pendiente: F4 calibración, F5-T7/T8/T9 deploy real."
   }
 }

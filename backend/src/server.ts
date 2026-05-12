@@ -12,13 +12,16 @@ const UPLOAD_MAX_BYTES = parseInt(process.env.UPLOAD_MAX_MB ?? '50') * 1024 * 10
 async function start() {
   const app = Fastify({ logger: { level: 'info' } });
 
-  await app.register(cors, { origin: 'http://localhost:5173' });
+  const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
+  await app.register(cors, { origin: allowedOrigin });
   await app.register(multipart, { limits: { fileSize: UPLOAD_MAX_BYTES } });
 
   await app.register(uploadRoute);
   await app.register(materialsRoute);
   await app.register(quoteRoute);
   await app.register(emailRoute);
+
+  app.get('/health', async () => ({ status: 'ok' }));
 
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);

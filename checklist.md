@@ -231,7 +231,8 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 - [x] `programarLimpieza(uploadId)` con `setTimeout` de 30 min
 - [x] No depende de reinicios del servidor
 
-### AA-3 · prices.json sin confirmar 🔴 bloqueante para deploy
+### AA-3 · prices.json sin confirmar 🔶 datos ficticios para testing
+- [x] `backend/src/data/prices.json` cargado con 13 materiales ficticios (PLA/PETG/ABS/TPU/Nylon/etc.)
 - [ ] Reunión con equipo de ventas/producción para definir precios reales
 - [ ] `backend/src/data/prices.json` actualizado con valores reales en USD
 - [ ] Aprobación explícita del equipo documentada (email o firma)

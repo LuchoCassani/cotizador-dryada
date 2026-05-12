@@ -1,0 +1,32 @@
+services:
+
+  backend:
+    build:
+      context: ./backend
+      target: build
+    working_dir: /app
+    command: npx tsx watch src/server.ts
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/src:/app/src:ro
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: "3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: build
+    working_dir: /app
+    command: npx vite --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src:ro
+    environment:
+      VITE_API_URL: ""
+      BACKEND_URL: "http://backend:3001"
+    depends_on:
+      - backend

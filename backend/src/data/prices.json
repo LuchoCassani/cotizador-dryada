@@ -1,9 +1,18 @@
 {
-  "costoInicio": 5.00,
+  "costoInicio": 4.50,
   "materiales": [
-    { "id": "pla-standard", "nombre": "PLA Estándar", "precioGramo": 0.08, "densidad": 1.24 },
-    { "id": "pla-silk",     "nombre": "PLA Silk",     "precioGramo": 0.12, "densidad": 1.24 },
-    { "id": "petg",         "nombre": "PETG",         "precioGramo": 0.10, "densidad": 1.27 },
-    { "id": "abs",          "nombre": "ABS",          "precioGramo": 0.09, "densidad": 1.04 }
+    { "id": "pla-standard", "nombre": "PLA Estándar",    "precioGramo": 0.08, "densidad": 1.24 },
+    { "id": "pla-plus",     "nombre": "PLA+",            "precioGramo": 0.10, "densidad": 1.24 },
+    { "id": "pla-silk",     "nombre": "PLA Silk",        "precioGramo": 0.14, "densidad": 1.24 },
+    { "id": "pla-matte",    "nombre": "PLA Matte",       "precioGramo": 0.11, "densidad": 1.24 },
+    { "id": "petg",         "nombre": "PETG",            "precioGramo": 0.10, "densidad": 1.27 },
+    { "id": "petg-cf",      "nombre": "PETG Fibra C.",   "precioGramo": 0.22, "densidad": 1.30 },
+    { "id": "abs",          "nombre": "ABS",             "precioGramo": 0.09, "densidad": 1.04 },
+    { "id": "asa",          "nombre": "ASA",             "precioGramo": 0.13, "densidad": 1.07 },
+    { "id": "tpu-95a",      "nombre": "TPU 95A",         "precioGramo": 0.18, "densidad": 1.21 },
+    { "id": "tpu-87a",      "nombre": "TPU 87A (flex.)", "precioGramo": 0.20, "densidad": 1.20 },
+    { "id": "nylon-pa12",   "nombre": "Nylon PA12",      "precioGramo": 0.25, "densidad": 1.01 },
+    { "id": "pla-wood",     "nombre": "PLA Wood",        "precioGramo": 0.16, "densidad": 1.15 },
+    { "id": "pla-marble",   "nombre": "PLA Marble",      "precioGramo": 0.15, "densidad": 1.24 }
   ]
 }
