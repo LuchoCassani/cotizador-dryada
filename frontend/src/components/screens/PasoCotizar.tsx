@@ -6,7 +6,7 @@ import type { Material, UploadResult, CotizacionResult, Complejidad } from '../.
 interface Props {
   uploadResult: UploadResult
   empleado: string
-  onQuote: (result: CotizacionResult) => void
+  onQuote: (result: CotizacionResult, observaciones: string) => void
   onBack: () => void
 }
 
@@ -50,7 +50,7 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
         empleadoId: empleado,
         observaciones: observaciones.trim() || undefined,
       })
-      onQuote(result)
+      onQuote(result, observaciones.trim())
     } catch (err: unknown) {
       const msg = (err as { error?: string })?.error ?? 'Error al calcular la cotización'
       setError(msg)

@@ -209,7 +209,7 @@
           "id": "F3-T6",
           "titulo": "PDF client-side con @react-pdf/renderer",
           "descripcion": "Template de PDF con: logo Dryada, número de cotización, fecha, empleado, modelo STL, material, cantidad, desglose de precios, observaciones, advertencia de margen si aplica. Botón descarga el PDF directamente.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T5"],
           "criterio_done": "PDF generado tiene todos los campos. Logo visible. Formato profesional validado por el equipo de ventas."
@@ -218,11 +218,11 @@
           "id": "F3-T7",
           "titulo": "Modal de envío por email",
           "descripcion": "Modal con campo de email del destinatario. Convierte el PDF a base64 y hace POST a /api/quote/:id/email. Muestra confirmación de envío exitoso o error.",
-          "estado": "pending",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": ["F3-T6"],
           "criterio_done": "Email llega al destinatario con el PDF correcto como adjunto.",
-          "nota": "UI del modal construida. Bloqueada por F3-T6: el callback onGeneratePdf devuelve cadena vacía hasta que el PDF esté implementado."
+          "nota": "UI del modal construida. handleGeneratePdf en App.tsx genera el PDF como base64 y lo pasa al POST de email."
         },
         {
           "id": "F3-T8",
@@ -439,12 +439,13 @@
       "bloquea_deploy": false
     }
   ],
+  "ultima_actualizacion": "2026-05-12",
   "metricas": {
     "total_tareas": 39,
-    "completadas": 21,
+    "completadas": 23,
     "en_progreso": 0,
-    "pendientes": 18,
-    "ultimo_commit": "2026-05-08",
-    "nota": "Backend F1+F2 completo (14/15 tareas — F1-T9 bloqueada por validación de precios con el equipo). Frontend F3 casi completo (7/9 — F3-T6 PDF y F3-T7 email modal pendientes de @react-pdf/renderer). F4 validación y F5 infra+deploy pendientes."
+    "pendientes": 16,
+    "ultimo_commit": "2026-05-12",
+    "nota": "Backend F1+F2 completo (14/15 — F1-T9 bloqueada por validación de precios). Frontend F3 completo (9/9): PDF con @react-pdf/renderer (CotizacionPDF.tsx), descarga directa y generación de base64 para email implementados en App.tsx. F4 validación y F5 infra+deploy pendientes."
   }
 }

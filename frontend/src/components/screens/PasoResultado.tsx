@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { IconArrowLeft, IconFileDownload, IconSend, IconAlertTriangle, IconX, IconLoader2, IconCircleCheck, IconMail } from '@tabler/icons-react'
 import { sendEmail } from '../../services/api'
+import { numeroCotizacion, fmtUSD, fmtGramos, fmtFecha } from '../../utils/format'
 import type { CotizacionResult, Complejidad } from '../../types'
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
   empleado: string
   onBack: () => void
   onGeneratePdf: () => Promise<string>
-  onDownloadPdf: () => void
+  onDownloadPdf: () => Promise<void>
 }
 
 function BadgeComplejidad({ complejidad }: { complejidad: Complejidad }) {
@@ -18,7 +19,7 @@ function BadgeComplejidad({ complejidad }: { complejidad: Complejidad }) {
     compleja: 'bg-dryada-orange-tint text-[#7A2A0A]',
   }
   const labels: Record<Complejidad, string> = {
-    simple: 'Pieza simple',
+    simple:   'Pieza simple',
     moderada: 'Pieza moderada',
     compleja: 'Pieza compleja — margen de error ±15%',
   }
@@ -110,8 +111,10 @@ function ModalEmail({ quoteId, onClose, onGeneratePdf }: {
                   disabled={loading || !email}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 bg-dryada-violet text-white rounded-lg py-2 text-[14px] font-medium hover:bg-[#5A2A8F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? <IconLoader2 size={14} className="animate-spin" /> : <IconSend size={14} />}
-                  Enviar
+                  {loading
+                    ? <><IconLoader2 size={14} className="animate-spin" />Generando...</>
+                    : <><IconSend size={14} />Enviar</>
+                  }
                 </button>
               </div>
             </form>
@@ -122,28 +125,24 @@ function ModalEmail({ quoteId, onClose, onGeneratePdf }: {
   )
 }
 
-function fmtUSD(value: number) {
-  return `$${value.toFixed(2)}`
-}
-
-function fmtGramos(value: number) {
-  return `${value.toFixed(2)} g`
-}
-
-function numeroCorto(id: string) {
-  const year = new Date().getFullYear()
-  const short = id.replace(/-/g, '').slice(0, 4).toUpperCase()
-  return `DRY-${year}-${short}`
-}
-
 export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownloadPdf }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
-  const numero = numeroCorto(result.id)
+  const numero = numeroCotizacion(result.id)
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      await onDownloadPdf()
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="flex-1 p-6 md:p-8">
-      {/* Banner complejidad compleja — siempre primero si aplica */}
+      {/* Banner complejidad compleja — siempre primero */}
       {result.complejidad === 'compleja' && (
         <div className="flex items-start gap-2 bg-dryada-orange-tint border border-[#F0A0C8] rounded-xl px-4 py-3 mb-5 text-[13px] text-[#7A2A0A]">
           <IconAlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
@@ -192,7 +191,7 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
           {[
             ['Gramos infill (10%)', fmtGramos(result.gramosInfill)],
             ['Gramos paredes (2 × 0.4 mm)', fmtGramos(result.gramosParedes)],
-            [`Peso total × ${result.material.nombre} $${result.material.precioGramo}/g`, fmtUSD(result.costoMaterialUSD)],
+            [`Peso total × ${result.material.nombre} ${fmtUSD(result.material.precioGramo)}/g`, fmtUSD(result.costoMaterialUSD)],
             ['Costo inicio de impresión', fmtUSD(result.costoInicioUSD)],
           ].map(([label, value]) => (
             <tr key={label} className="border-b border-dryada-gray-100">
@@ -207,9 +206,9 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
         </table>
       </div>
 
-      {/* Empleado */}
+      {/* Empleado y fecha */}
       <p className="text-[11px] text-dryada-gray-400 mb-5">
-        Generado por <span className="text-dryada-gray-700">{empleado}</span> · {new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+        Generado por <span className="text-dryada-gray-700">{empleado}</span> · {fmtFecha()}
       </p>
 
       {/* Acciones */}
@@ -224,11 +223,14 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
         </button>
         <button
           type="button"
-          onClick={onDownloadPdf}
-          className="inline-flex items-center gap-1.5 bg-dryada-orange text-white rounded-lg px-5 py-2.5 text-[14px] font-medium hover:bg-[#C94E1F] transition-colors"
+          onClick={handleDownload}
+          disabled={downloading}
+          className="inline-flex items-center gap-1.5 bg-dryada-orange text-white rounded-lg px-5 py-2.5 text-[14px] font-medium hover:bg-[#C94E1F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          <IconFileDownload size={15} aria-hidden />
-          Descargar PDF
+          {downloading
+            ? <><IconLoader2 size={15} className="animate-spin" aria-hidden />Generando...</>
+            : <><IconFileDownload size={15} aria-hidden />Descargar PDF</>
+          }
         </button>
         <button
           type="button"

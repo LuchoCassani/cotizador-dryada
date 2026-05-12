@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { pdf } from '@react-pdf/renderer'
 import { Topbar } from './components/layout/Topbar'
 import { AccentBar } from './components/layout/AccentBar'
 import { StepsBar } from './components/layout/StepsBar'
@@ -6,6 +7,8 @@ import { PantallaInicio } from './components/screens/PantallaInicio'
 import { PasoSubirSTL } from './components/screens/PasoSubirSTL'
 import { PasoCotizar } from './components/screens/PasoCotizar'
 import { PasoResultado } from './components/screens/PasoResultado'
+import { CotizacionPDF } from './components/pdf/CotizacionPDF'
+import { numeroCotizacion } from './utils/format'
 import type { Step, UploadResult, CotizacionResult } from './types'
 import './App.css'
 
@@ -13,8 +16,9 @@ export default function App() {
   const [step, setStep] = useState<Step>(0)
   const [empleado, setEmpleado] = useState('')
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
-  const [_stlFile, setStlFile] = useState<File | null>(null)
+  const [stlFile, setStlFile] = useState<File | null>(null)
   const [quoteResult, setQuoteResult] = useState<CotizacionResult | null>(null)
+  const [observaciones, setObservaciones] = useState('')
 
   function handleStart(nombre: string) {
     setEmpleado(nombre)
@@ -27,19 +31,44 @@ export default function App() {
     setStep(2)
   }
 
-  function handleQuote(result: CotizacionResult) {
+  function handleQuote(result: CotizacionResult, obs: string) {
     setQuoteResult(result)
+    setObservaciones(obs)
     setStep(3)
   }
 
-  // El PDF se genera en PasoResultado con @react-pdf/renderer — se pasa como callback
-  async function handleGeneratePdf(): Promise<string> {
-    // TODO F3-T6: implementar con @react-pdf/renderer y retornar base64
-    return ''
+  function buildPdfElement() {
+    return (
+      <CotizacionPDF
+        quoteResult={quoteResult!}
+        uploadResult={uploadResult!}
+        empleado={empleado}
+        stlFileName={stlFile?.name ?? ''}
+        observaciones={observaciones || undefined}
+      />
+    )
   }
 
-  function handleDownloadPdf() {
-    // TODO F3-T6: implementar descarga directa desde el browser
+  async function handleGeneratePdf(): Promise<string> {
+    const blob = await pdf(buildPdfElement()).toBlob()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve((reader.result as string).split(',')[1])
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  async function handleDownloadPdf(): Promise<void> {
+    const blob = await pdf(buildPdfElement()).toBlob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `cotizacion-dryada-${numeroCotizacion(quoteResult!.id)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   return (

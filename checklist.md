@@ -156,11 +156,11 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 - [x] Botón "Enviar por email" abre modal
 
 ### PDF
-- [ ] Template incluye: logo Dryada, número de cotización, fecha
-- [ ] Template incluye: nombre del empleado, nombre del archivo STL
-- [ ] Template incluye: material, cantidad, desglose de precios
-- [ ] Template incluye: observaciones (si las hay)
-- [ ] Si complejidad es `compleja` o `moderada`: nota de margen de error en el PDF
+- [x] Template incluye: logo Dryada, número de cotización, fecha
+- [x] Template incluye: nombre del empleado, nombre del archivo STL
+- [x] Template incluye: material, cantidad, desglose de precios
+- [x] Template incluye: observaciones (si las hay)
+- [x] Si complejidad es `compleja` o `moderada`: nota de margen de error en el PDF
 - [ ] PDF validado y aprobado por el equipo de ventas
 
 ### Modal de envío por email
@@ -168,7 +168,7 @@ Marcar cada ítem con `[x]` al completarlo. No marcar hasta que el criterio est�
 - [x] POST a `/api/quote/:id/email` con pdfBase64
 - [x] Muestra confirmación de envío exitoso
 - [x] Muestra error descriptivo si el envío falla
-- [ ] Email llega al destinatario con el PDF correcto (bloqueado por F3-T6)
+- [ ] Email llega al destinatario con el PDF correcto (pendiente prueba con Gmail real)
 
 ### Pantalla de inicio
 - [x] Campo para nombre del empleado con validación (no vacío)
