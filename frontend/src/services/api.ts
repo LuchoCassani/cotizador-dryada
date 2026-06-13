@@ -1,4 +1,4 @@
-import type { CotizacionResult, Material, UploadResult, ApiError } from '../types'
+import type { CotizacionResult, Maquina, Material, UploadResult, ApiError } from '../types'
 
 // Si VITE_API_TOKEN está seteado (producción), se incluye en todas las llamadas.
 // En desarrollo local sin la variable, el header no se envía y el backend lo ignora.
@@ -32,9 +32,15 @@ export async function getMaterials(): Promise<Material[]> {
   return handleResponse<Material[]>(res)
 }
 
+export async function getMachines(): Promise<Maquina[]> {
+  const res = await fetch('/api/machines', { headers: authHeaders() })
+  return handleResponse<Maquina[]>(res)
+}
+
 export async function createQuote(params: {
   uploadId: string
   materialId: string
+  maquinaId: string
   cantidad: number
   empleadoId: string
   observaciones?: string

@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import type { CotizacionResult, UploadResult, Complejidad } from '../../types'
-import { numeroCotizacion, fmtUSD, fmtGramos, fmtFecha } from '../../utils/format'
+import { numeroCotizacion, fmtUSD, fmtARS, fmtGramos, fmtFecha } from '../../utils/format'
 
 // Paleta del design system — solo violeta y naranja en el PDF, sin gradientes
 const V  = '#7C3FBE'
@@ -142,8 +142,8 @@ interface Props {
 
 export function CotizacionPDF({ quoteResult, uploadResult, empleado, stlFileName, observaciones }: Props) {
   const numero = numeroCotizacion(quoteResult.id)
-  const { gramosInfill, gramosParedes, gramosTotal, costoMaterialUSD, costoInicioUSD,
-          precioUnitarioUSD, precioFinalUSD, material, cantidad, complejidad } = quoteResult
+  const { gramosInfill, gramosParedes, gramosTotal, costoMaterialUSD, costoManoObraUSD,
+          costoAmortizacionUSD, costoInicioUSD, precioUnitarioUSD, precioFinalUSD, precioFinalARS, material, cantidad, complejidad } = quoteResult
   const { boundingBox } = uploadResult
 
   return (
@@ -242,6 +242,14 @@ export function CotizacionPDF({ quoteResult, uploadResult, empleado, stlFileName
             <Text style={s.tdValue}>{fmtUSD(costoMaterialUSD)}</Text>
           </View>
           <View style={s.tr}>
+            <Text style={s.tdLabel}>Mano de obra</Text>
+            <Text style={s.tdValue}>{fmtUSD(costoManoObraUSD)}</Text>
+          </View>
+          <View style={s.tr}>
+            <Text style={s.tdLabel}>Amortización máquina</Text>
+            <Text style={s.tdValue}>{fmtUSD(costoAmortizacionUSD)}</Text>
+          </View>
+          <View style={s.tr}>
             <Text style={s.tdLabel}>Costo inicio de impresión</Text>
             <Text style={s.tdValue}>{fmtUSD(costoInicioUSD)}</Text>
           </View>
@@ -257,7 +265,10 @@ export function CotizacionPDF({ quoteResult, uploadResult, empleado, stlFileName
             <Text style={s.resultLabel}>Precio final</Text>
             <Text style={s.resultDetail}>{cantidad} {cantidad === 1 ? 'unidad' : 'unidades'} × {fmtUSD(precioUnitarioUSD)} c/u</Text>
           </View>
-          <Text style={s.resultPrice}>{fmtUSD(precioFinalUSD)} USD</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={s.resultPrice}>{fmtUSD(precioFinalUSD)} USD</Text>
+            <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: O, marginTop: 2 }}>{fmtARS(precioFinalARS)} ARS</Text>
+          </View>
         </View>
 
         {/* Observaciones */}

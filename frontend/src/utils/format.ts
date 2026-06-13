@@ -8,6 +8,10 @@ export function fmtUSD(value: number): string {
   return `$${value.toFixed(2)}`
 }
 
+export function fmtARS(value: number): string {
+  return `$${Math.round(value).toLocaleString('es-AR')}`
+}
+
 export function fmtGramos(value: number): string {
   return `${value.toFixed(2)} g`
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { IconFlask, IconStack2, IconNotes, IconArrowLeft, IconCalculator, IconLoader2, IconFileCheck } from '@tabler/icons-react'
-import { getMaterials, createQuote } from '../../services/api'
-import type { Material, UploadResult, CotizacionResult, Complejidad } from '../../types'
+import { IconFlask, IconBox, IconStack2, IconNotes, IconArrowLeft, IconCalculator, IconLoader2, IconFileCheck } from '@tabler/icons-react'
+import { getMaterials, getMachines, createQuote } from '../../services/api'
+import type { Maquina, Material, UploadResult, CotizacionResult, Complejidad } from '../../types'
 
 interface Props {
   uploadResult: UploadResult
@@ -26,6 +26,8 @@ function BadgeComplejidad({ complejidad }: { complejidad: Complejidad }) {
 export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) {
   const [materials, setMaterials] = useState<Material[]>([])
   const [materialId, setMaterialId] = useState('')
+  const [machines, setMachines] = useState<Maquina[]>([])
+  const [maquinaId, setMaquinaId] = useState('')
   const [cantidad, setCantidad] = useState(1)
   const [observaciones, setObservaciones] = useState('')
   const [loading, setLoading] = useState(false)
@@ -35,6 +37,10 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
     getMaterials().then(list => {
       setMaterials(list)
       if (list.length > 0) setMaterialId(list[0].id)
+    })
+    getMachines().then(list => {
+      setMachines(list)
+      if (list.length > 0) setMaquinaId(list[0].id)
     })
   }, [])
 
@@ -46,6 +52,7 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
       const result = await createQuote({
         uploadId: uploadResult.uploadId,
         materialId,
+        maquinaId,
         cantidad,
         empleadoId: empleado,
         observaciones: observaciones.trim() || undefined,
@@ -89,6 +96,30 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
                     {m.nombre} — ${m.precioGramo.toFixed(2)} / g · densidad {m.densidad}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Máquina */}
+            <div>
+              <label htmlFor="maquina-sel" className="block text-[12px] font-medium text-dryada-gray-700 mb-1.5 flex items-center gap-1">
+                <IconBox size={13} aria-hidden />
+                Máquina
+              </label>
+              <select
+                id="maquina-sel"
+                value={maquinaId}
+                onChange={e => setMaquinaId(e.target.value)}
+                disabled={machines.length === 0}
+                className="w-full border border-dryada-gray-100 rounded-lg px-3 py-2 text-[14px] text-dryada-gray-900 bg-white focus:outline-none focus:border-dryada-violet focus:ring-2 focus:ring-dryada-violet/10 disabled:text-dryada-gray-400 disabled:cursor-not-allowed"
+              >
+                {machines.length === 0
+                  ? <option value="">No hay máquinas disponibles.</option>
+                  : machines.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre} — {m.capacidadXmm}×{m.capacidadYmm}×{m.capacidadZmm} mm
+                    </option>
+                  ))
+                }
               </select>
             </div>
 
@@ -151,7 +182,7 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
             </button>
             <button
               type="submit"
-              disabled={loading || !materialId}
+              disabled={loading || !materialId || !maquinaId}
               className="inline-flex items-center gap-1.5 bg-dryada-violet text-white rounded-lg px-5 py-2.5 text-[14px] font-medium hover:bg-[#5A2A8F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {loading

@@ -4,6 +4,7 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import { uploadRoute } from './routes/upload.route';
 import { materialsRoute } from './routes/materials.route';
+import { machinesRoute } from './routes/machines.route';
 import { quoteRoute } from './routes/quote.route';
 import { emailRoute } from './routes/email.route';
 
@@ -43,6 +44,7 @@ async function start() {
 
   await app.register(uploadRoute);
   await app.register(materialsRoute);
+  await app.register(machinesRoute);
   await app.register(quoteRoute);
   await app.register(emailRoute);
 

@@ -1,5 +1,13 @@
 export type Complejidad = 'simple' | 'moderada' | 'compleja'
 
+export interface Maquina {
+  id: string
+  nombre: string
+  capacidadXmm: number
+  capacidadYmm: number
+  capacidadZmm: number
+}
+
 export type Step = 0 | 1 | 2 | 3
 
 export interface BoundingBox {
@@ -30,10 +38,14 @@ export interface CotizacionResult {
   gramosParedes: number
   gramosTotal: number
   costoMaterialUSD: number
+  costoManoObraUSD: number
   costoInicioUSD: number
   precioUnitarioUSD: number
+  costoAmortizacionUSD: number
   precioFinalUSD: number
+  precioFinalARS: number
   material: { id: string; nombre: string; precioGramo: number }
+  maquina: { id: string; nombre: string }
   cantidad: number
   volumenCm3: number
   areaCm2: number

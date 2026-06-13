@@ -4,6 +4,7 @@ import { uploadCache, quoteService } from '../app';
 interface QuoteBody {
   uploadId: string;
   materialId: string;
+  maquinaId: string;
   cantidad: number;
   empleadoId: string;
   observaciones?: string;
@@ -14,11 +15,12 @@ export const quoteRoute: FastifyPluginAsync = async (fastify) => {
     schema: {
       body: {
         type: 'object',
-        required: ['uploadId', 'materialId', 'cantidad', 'empleadoId'],
+        required: ['uploadId', 'materialId', 'maquinaId', 'cantidad', 'empleadoId'],
         additionalProperties: false,
         properties: {
           uploadId:      { type: 'string' },
           materialId:    { type: 'string' },
+          maquinaId:     { type: 'string', minLength: 1 },
           cantidad:      { type: 'integer', minimum: 1 },
           empleadoId:    { type: 'string', minLength: 1, maxLength: 100 },
           observaciones: { type: 'string', maxLength: 500 },
@@ -26,7 +28,7 @@ export const quoteRoute: FastifyPluginAsync = async (fastify) => {
       },
     },
   }, async (request, reply) => {
-    const { uploadId, materialId, cantidad, empleadoId, observaciones } = request.body;
+    const { uploadId, materialId, maquinaId, cantidad, empleadoId, observaciones } = request.body;
 
     const stlAnalysis = uploadCache.get(uploadId);
     if (!stlAnalysis) {
@@ -35,7 +37,7 @@ export const quoteRoute: FastifyPluginAsync = async (fastify) => {
 
     let result;
     try {
-      result = await quoteService.calcularCotizacion({ stlAnalysis, materialId, cantidad, empleadoId, observaciones });
+      result = await quoteService.calcularCotizacion({ stlAnalysis, materialId, maquinaId, cantidad, empleadoId, observaciones });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al calcular la cotización.';
       return reply.status(400).send({ error: message, code: 'QUOTE_ERROR' });

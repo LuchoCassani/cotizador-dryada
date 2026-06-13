@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { IconArrowLeft, IconFileDownload, IconSend, IconAlertTriangle, IconX, IconLoader2, IconCircleCheck, IconMail } from '@tabler/icons-react'
 import { sendEmail } from '../../services/api'
-import { numeroCotizacion, fmtUSD, fmtGramos, fmtFecha } from '../../utils/format'
+import { numeroCotizacion, fmtUSD, fmtARS, fmtGramos, fmtFecha } from '../../utils/format'
 import type { CotizacionResult, Complejidad } from '../../types'
 
 interface Props {
@@ -181,6 +181,7 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
           <p className="text-[11px] text-[#7A2A0A] mb-1">Precio final</p>
           <p className="text-[26px] font-medium text-dryada-orange font-mono">{fmtUSD(result.precioFinalUSD)}</p>
           <p className="text-[10px] text-[#7A2A0A] mt-0.5">USD · {result.cantidad} {result.cantidad === 1 ? 'unidad' : 'unidades'}</p>
+          <p className="text-[13px] font-medium text-dryada-orange font-mono mt-1">{fmtARS(result.precioFinalARS)} ARS</p>
         </div>
       </div>
 
@@ -192,6 +193,8 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
             ['Gramos infill (10%)', fmtGramos(result.gramosInfill)],
             ['Gramos paredes (2 × 0.4 mm)', fmtGramos(result.gramosParedes)],
             [`Peso total × ${result.material.nombre} ${fmtUSD(result.material.precioGramo)}/g`, fmtUSD(result.costoMaterialUSD)],
+            ['Mano de obra', fmtUSD(result.costoManoObraUSD)],
+            ['Amortización máquina', fmtUSD(result.costoAmortizacionUSD)],
             ['Costo inicio de impresión', fmtUSD(result.costoInicioUSD)],
           ].map(([label, value]) => (
             <tr key={label} className="border-b border-dryada-gray-100">
