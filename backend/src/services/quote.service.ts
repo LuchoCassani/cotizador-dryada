@@ -1,8 +1,11 @@
 import { randomUUID } from 'crypto';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { IPricesRepository } from '../repositories/prices.repository';
 import { IGlobalParametersRepository } from '../repositories/global-params.repository';
 import { IMachinesRepository } from '../repositories/machines.repository';
 import { IQuoteRepository, QuoteRecord } from '../repositories/quote.repository';
+import { IPrusaSlicerService } from './prusa-slicer.service';
 import { StlAnalysis } from './stl-processor';
 
 const FILL_RATIO = 0.10;
@@ -38,6 +41,7 @@ export interface CotizacionResult {
   areaCm2: number;
   complejidad: string;
   advertencias: string[];
+  weightSource: 'prusaslicer' | 'n1';
 }
 
 export class QuoteService {
@@ -46,6 +50,7 @@ export class QuoteService {
     private readonly paramsRepo: IGlobalParametersRepository,
     private readonly machinesRepo: IMachinesRepository,
     private readonly quoteRepo: IQuoteRepository,
+    private readonly prusaSlicerService: IPrusaSlicerService,
   ) {}
 
   async calcularCotizacion(input: CotizacionInput): Promise<CotizacionResult> {
@@ -59,11 +64,32 @@ export class QuoteService {
     if (params.piezasPorDiaEstimadas <= 0) throw new Error('piezasPorDiaEstimadas debe ser mayor que 0.');
     if (machine === null) throw new Error(`Máquina '${input.maquinaId}' no encontrada.`);
 
-    const { volumenCm3, areaCm2, complejidad, advertencias } = input.stlAnalysis;
+    const { volumenCm3, areaCm2, complejidad, advertencias, uploadId } = input.stlAnalysis;
 
-    const gramosInfill  = volumenCm3 * FILL_RATIO * material.densidad;
-    const gramosParedes = areaCm2 * (N_PERIMETROS * ANCHO_LINEA_CM) * material.densidad;
-    const gramosTotal   = (gramosInfill + gramosParedes) * (1 + params.desperdicioPct);
+    const stlPath = path.join(process.env.UPLOADS_DIR ?? '/tmp/cotizador-uploads', `${uploadId}.stl`);
+    let gramosInfill = 0;
+    let gramosParedes = 0;
+    let gramosTotal = 0;
+    let weightSource: 'prusaslicer' | 'n1' = 'n1';
+
+    let stlExists = false;
+    try { await fs.access(stlPath); stlExists = true; } catch {}
+
+    if (stlExists) {
+      try {
+        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad);
+        gramosTotal = sliced.gramosTotal * (1 + params.desperdicioPct);
+        weightSource = 'prusaslicer';
+      } catch {
+        // fallback a N1
+      }
+    }
+
+    if (weightSource === 'n1') {
+      gramosInfill  = volumenCm3 * FILL_RATIO * material.densidad;
+      gramosParedes = areaCm2 * (N_PERIMETROS * ANCHO_LINEA_CM) * material.densidad;
+      gramosTotal   = (gramosInfill + gramosParedes) * (1 + params.desperdicioPct);
+    }
 
     const costoMaterialUSD     = gramosTotal * material.precioGramo;
     const costoManoObraUSD     = (params.tarifaManoObraUsdHora * params.horasPorPieza) / input.cantidad;
@@ -94,6 +120,8 @@ export class QuoteService {
 
     await this.quoteRepo.save(record);
 
+    if (stlExists) fs.unlink(stlPath).catch(() => {});
+
     return {
       id,
       gramosInfill,
@@ -113,6 +141,7 @@ export class QuoteService {
       areaCm2,
       complejidad,
       advertencias,
+      weightSource,
     };
   }
 }

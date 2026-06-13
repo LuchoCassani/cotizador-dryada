@@ -190,8 +190,10 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
         <p className="text-[12px] font-medium text-dryada-gray-700 mb-3">Desglose de cálculo</p>
         <table className="w-full text-[12px] border-collapse">
           {[
-            ['Gramos infill (10%)', fmtGramos(result.gramosInfill)],
-            ['Gramos paredes (2 × 0.4 mm)', fmtGramos(result.gramosParedes)],
+            ...(result.weightSource !== 'prusaslicer' ? [
+              ['Gramos infill (10%)', fmtGramos(result.gramosInfill)],
+              ['Gramos paredes (2 × 0.4 mm)', fmtGramos(result.gramosParedes)],
+            ] : []),
             [`Peso total × ${result.material.nombre} ${fmtUSD(result.material.precioGramo)}/g`, fmtUSD(result.costoMaterialUSD)],
             ['Mano de obra', fmtUSD(result.costoManoObraUSD)],
             ['Amortización máquina', fmtUSD(result.costoAmortizacionUSD)],

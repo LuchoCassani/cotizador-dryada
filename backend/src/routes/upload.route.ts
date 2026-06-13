@@ -1,6 +1,5 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
 import { FastifyPluginAsync } from 'fastify';
 import { uploadCache } from '../app';
 import { analizarStl } from '../services/stl-processor';
@@ -11,7 +10,7 @@ function programarLimpieza(uploadId: string): void {
   setTimeout(async () => {
     uploadCache.delete(uploadId);
     try {
-      await fs.unlink(path.join(os.tmpdir(), `${uploadId}.stl`));
+      await fs.unlink(path.join(process.env.UPLOADS_DIR ?? '/tmp/cotizador-uploads', `${uploadId}.stl`));
     } catch {
       // El archivo puede haber sido eliminado antes por otro proceso
     }

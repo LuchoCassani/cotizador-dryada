@@ -51,6 +51,7 @@ export interface CotizacionResult {
   areaCm2: number
   complejidad: Complejidad
   advertencias: string[]
+  weightSource: 'prusaslicer' | 'n1'
 }
 
 export interface ApiError {

@@ -143,7 +143,7 @@ interface Props {
 export function CotizacionPDF({ quoteResult, uploadResult, empleado, stlFileName, observaciones }: Props) {
   const numero = numeroCotizacion(quoteResult.id)
   const { gramosInfill, gramosParedes, gramosTotal, costoMaterialUSD, costoManoObraUSD,
-          costoAmortizacionUSD, costoInicioUSD, precioUnitarioUSD, precioFinalUSD, precioFinalARS, material, cantidad, complejidad } = quoteResult
+          costoAmortizacionUSD, costoInicioUSD, precioUnitarioUSD, precioFinalUSD, precioFinalARS, material, cantidad, complejidad, weightSource } = quoteResult
   const { boundingBox } = uploadResult
 
   return (
@@ -225,14 +225,18 @@ export function CotizacionPDF({ quoteResult, uploadResult, empleado, stlFileName
         {/* Desglose */}
         <Text style={s.secTitle}>Desglose de cálculo</Text>
         <View style={s.table}>
-          <View style={s.tr}>
-            <Text style={s.tdLabel}>Gramos infill (10%)</Text>
-            <Text style={s.tdValue}>{fmtGramos(gramosInfill)}</Text>
-          </View>
-          <View style={s.tr}>
-            <Text style={s.tdLabel}>Gramos paredes (2 × 0.4 mm)</Text>
-            <Text style={s.tdValue}>{fmtGramos(gramosParedes)}</Text>
-          </View>
+          {weightSource !== 'prusaslicer' && (
+            <>
+              <View style={s.tr}>
+                <Text style={s.tdLabel}>Gramos infill (10%)</Text>
+                <Text style={s.tdValue}>{fmtGramos(gramosInfill)}</Text>
+              </View>
+              <View style={s.tr}>
+                <Text style={s.tdLabel}>Gramos paredes (2 × 0.4 mm)</Text>
+                <Text style={s.tdValue}>{fmtGramos(gramosParedes)}</Text>
+              </View>
+            </>
+          )}
           <View style={s.tr}>
             <Text style={s.tdLabel}>Peso total estimado</Text>
             <Text style={s.tdValue}>{fmtGramos(gramosTotal)}</Text>

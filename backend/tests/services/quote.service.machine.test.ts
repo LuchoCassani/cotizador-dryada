@@ -5,6 +5,7 @@ import type { IPricesRepository } from '../../src/repositories/prices.repository
 import type { IGlobalParametersRepository, ParametrosGlobales } from '../../src/repositories/global-params.repository';
 import type { IMachinesRepository, Maquina } from '../../src/repositories/machines.repository';
 import type { IQuoteRepository } from '../../src/repositories/quote.repository';
+import type { IPrusaSlicerService } from '../../src/services/prusa-slicer.service';
 
 const TEST_MACHINE: Maquina = {
   id: 'maq-001',
@@ -54,7 +55,10 @@ function makeRepos(params: ParametrosGlobales = PARAMS_AISLADOS, machine: Maquin
     findById: vi.fn(),
     findByEmpleado: vi.fn(),
   };
-  return { pricesRepo, paramsRepo, machinesRepo, quoteRepo };
+  const prusaSlicerService: IPrusaSlicerService = {
+    slice: vi.fn().mockRejectedValue(new Error('not available')),
+  };
+  return { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService };
 }
 
 const BASE_INPUT: CotizacionInput = {
@@ -74,8 +78,8 @@ const BASE_INPUT: CotizacionInput = {
 
 describe('QuoteService — lógica de máquina', () => {
   it('costoAmortizacionUSD sigue la fórmula del Excel (FR-005)', async () => {
-    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo } = makeRepos();
-    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo);
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos();
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
     const result = await service.calcularCotizacion(BASE_INPUT);
     // gramosTotal = (10*0.10*1.24 + 60*0.08*1.24) * 1 = 7.192  (desperdicioPct=0)
     // costoAmortizacion = (7000/30/30/20) * (7.192/10)
@@ -85,31 +89,31 @@ describe('QuoteService — lógica de máquina', () => {
   });
 
   it('EC-001/002: máquina no encontrada lanza error con el ID en el mensaje', async () => {
-    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo } = makeRepos(PARAMS_AISLADOS, null);
-    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo);
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos(PARAMS_AISLADOS, null);
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
     await expect(service.calcularCotizacion(BASE_INPUT))
       .rejects.toThrow("Máquina 'maq-001' no encontrada.");
   });
 
   it('EC-004: piezasPorDiaEstimadas = 0 lanza error (no Infinity silencioso)', async () => {
     const params = { ...PARAMS_AISLADOS, piezasPorDiaEstimadas: 0 };
-    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo } = makeRepos(params);
-    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo);
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos(params);
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
     await expect(service.calcularCotizacion(BASE_INPUT))
       .rejects.toThrow('piezasPorDiaEstimadas debe ser mayor que 0.');
   });
 
   it('NFR-004: machinesRepo.getById se llama exactamente 1 vez por cotización', async () => {
-    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo } = makeRepos();
-    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo);
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos();
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
     await service.calcularCotizacion(BASE_INPUT);
     expect(machinesRepo.getById).toHaveBeenCalledTimes(1);
     expect(machinesRepo.getById).toHaveBeenCalledWith('maq-001');
   });
 
   it('costoAmortizacionUSD no escala con cantidad (es costo por pieza, no por lote)', async () => {
-    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo } = makeRepos();
-    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo);
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos();
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
     const r1 = await service.calcularCotizacion({ ...BASE_INPUT, cantidad: 1 });
     const r3 = await service.calcularCotizacion({ ...BASE_INPUT, cantidad: 3 });
     expect(r3.costoAmortizacionUSD).toBeCloseTo(r1.costoAmortizacionUSD, 6);

@@ -1,7 +1,6 @@
 import { randomUUID } from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
 
 export type NivelComplejidad = 'simple' | 'moderada' | 'compleja';
 
@@ -136,7 +135,11 @@ export async function analizarStl(buffer: Buffer): Promise<StlAnalysis> {
   const complejidad = evaluarComplejidad(areaCm2, volumenCm3);
   const uploadId = randomUUID();
 
-  await fs.writeFile(path.join(os.tmpdir(), `${uploadId}.stl`), buffer);
+  // Silent fail per C-2: si UPLOADS_DIR no es escribible, la cotización usará fallback N1
+  await fs.writeFile(
+    path.join(process.env.UPLOADS_DIR ?? '/tmp/cotizador-uploads', `${uploadId}.stl`),
+    buffer,
+  ).catch(() => {});
 
   return { uploadId, volumenCm3, areaCm2, boundingBox, complejidad, advertencias };
 }

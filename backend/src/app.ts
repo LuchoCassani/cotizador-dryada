@@ -1,5 +1,10 @@
+import { z } from 'zod';
+import { mkdirSync } from 'fs';
+import { readdir, stat, unlink } from 'fs/promises';
+import * as path from 'path';
 import { SqliteQuoteRepository } from './repositories/sqlite-quote.repository';
 import { QuoteService } from './services/quote.service';
+import { PrusaSlicerService } from './services/prusa-slicer.service';
 import { EmailService } from './services/email.service';
 import { StlAnalysis } from './services/stl-processor';
 import type { IPricesRepository } from './repositories/prices.repository';
@@ -8,7 +13,28 @@ import { SqliteMachinesRepository } from './repositories/sqlite-machines.reposit
 import { SqliteMaterialsRepository } from './repositories/sqlite-materials.repository';
 import { SqliteGlobalParamsRepository } from './repositories/sqlite-global-params.repository';
 
+// FR-010: Validación de env vars de PrusaSlicer con zod al arranque
+const prusaEnvSchema = z.object({
+  PRUSASLICER_BIN:    z.string().min(1).default('prusa-slicer'),
+  UPLOADS_DIR:        z.string().min(1).default('/tmp/cotizador-uploads'),
+  PRUSA_LAYER_HEIGHT: z.string().regex(/^\d+\.\d+$/).default('0.20'),
+});
+const prusaEnvResult = prusaEnvSchema.safeParse(process.env);
+if (!prusaEnvResult.success) {
+  console.error('[startup] Variables de entorno de PrusaSlicer inválidas:', prusaEnvResult.error.issues);
+  process.exit(1);
+}
+const { PRUSASLICER_BIN, UPLOADS_DIR, PRUSA_LAYER_HEIGHT } = prusaEnvResult.data;
+
 const DB_PATH = process.env.DB_PATH ?? './data/cotizador.db';
+
+// EC-007: Crear UPLOADS_DIR al arranque; si falla, el slicer no podrá guardar STLs → fallback N1
+try {
+  mkdirSync(UPLOADS_DIR, { recursive: true });
+} catch (err) {
+  console.error(`[startup] No se pudo crear UPLOADS_DIR (${UPLOADS_DIR}):`, err);
+}
+
 const db = initDatabase(DB_PATH);
 
 export const machinesRepo  = new SqliteMachinesRepository(db);
@@ -45,8 +71,28 @@ const pricesAdapter: IPricesRepository = {
 
 export const pricesRepo   = pricesAdapter;
 export const quoteRepo    = new SqliteQuoteRepository(db);
-export const quoteService = new QuoteService(pricesAdapter, paramsRepo, machinesRepo, quoteRepo);
+const prusaSlicerService  = new PrusaSlicerService(PRUSASLICER_BIN, PRUSA_LAYER_HEIGHT);
+export const quoteService = new QuoteService(pricesAdapter, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
 export const emailService = new EmailService();
+
+// FR-009: Job periódico que elimina STLs con más de 30 min de antigüedad (cubre server restarts)
+const UPLOAD_TTL_MS    = 30 * 60 * 1000;
+const SCAN_INTERVAL_MS = 10 * 60 * 1000;
+setInterval(async () => {
+  try {
+    const files = await readdir(UPLOADS_DIR);
+    const now = Date.now();
+    await Promise.all(
+      files
+        .filter(f => f.endsWith('.stl'))
+        .map(async f => {
+          const p = path.join(UPLOADS_DIR, f);
+          const s = await stat(p).catch(() => null);
+          if (s && now - s.mtimeMs > UPLOAD_TTL_MS) await unlink(p).catch(() => {});
+        })
+    );
+  } catch { /* UPLOADS_DIR inaccesible — skip */ }
+}, SCAN_INTERVAL_MS).unref();
 
 // Cache en memoria de uploads pendientes de cotizar.
 // Límite de 200 entradas simultáneas para evitar consumo ilimitado de RAM.
