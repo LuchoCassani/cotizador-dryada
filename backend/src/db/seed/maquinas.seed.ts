@@ -1,0 +1,48 @@
+import type { Maquina } from '../../repositories/machines.repository';
+
+export const MAQUINAS_SEED: Maquina[] = [
+  {
+    id: '0a5c4f2d-5362-4c8e-bbc2-18d5a155081e',
+    nombre: 'Máquina 1',
+    capacidadXmm: 300,
+    capacidadYmm: 300,
+    capacidadZmm: 300,
+    costoUsd: 7000,
+    mesesAmortizacion: 30,
+    activa: true,
+    creadaAt: '2026-06-13T00:00:00.000Z',
+  },
+  {
+    id: 'a5f76d81-a6b9-41b5-9c26-798cf4dded23',
+    nombre: 'Máquina 2',
+    capacidadXmm: 300,
+    capacidadYmm: 300,
+    capacidadZmm: 300,
+    costoUsd: 7000,
+    mesesAmortizacion: 30,
+    activa: true,
+    creadaAt: '2026-06-13T00:00:00.000Z',
+  },
+  {
+    id: '1b511cb3-69eb-4f0e-aee0-fee20f6ad2cd',
+    nombre: 'Máquina 3',
+    capacidadXmm: 300,
+    capacidadYmm: 300,
+    capacidadZmm: 300,
+    costoUsd: 7000,
+    mesesAmortizacion: 30,
+    activa: true,
+    creadaAt: '2026-06-13T00:00:00.000Z',
+  },
+  {
+    id: '16fd6fc1-5b97-47db-8b6d-754a0a4ce655',
+    nombre: 'Máquina 4',
+    capacidadXmm: 300,
+    capacidadYmm: 300,
+    capacidadZmm: 600,
+    costoUsd: 7000,
+    mesesAmortizacion: 30,
+    activa: true,
+    creadaAt: '2026-06-13T00:00:00.000Z',
+  },
+];

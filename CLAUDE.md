@@ -120,6 +120,15 @@ SMTP_USER=cotizador@dryada.com
 SMTP_PASS=<app-password-16-chars>
 EMAIL_FROM="Cotizador Dryada <cotizador@dryada.com>"
 UPLOAD_MAX_MB=50
+DB_PATH=./data/cotizador.db
+```
+
+### Nota: instalación de dependencias nativas
+
+`better-sqlite3` es un módulo nativo que requiere compilación. En este entorno (Node 25 + macOS ARM64), Python 3.14 rompe la compilación. Usar Python 3.13:
+
+```bash
+npm install --python=/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13
 ```
 
 ---
@@ -136,3 +145,19 @@ UPLOAD_MAX_MB=50
 ## Antes de marcar una tarea como done
 
 Verificar el criterio de done en `tasks.json` para esa tarea específica. Si el criterio incluye un test manual (ej: "pesar 10 piezas físicas"), no marcarlo como done hasta completarlo.
+
+---
+
+## SDD Workflow
+
+Este proyecto usa Specification-Driven Development. Toda feature sigue este ciclo:
+
+1. `/sdd:specify` — Escribir spec desde descripción del feature
+2. `/sdd:clarify` — Identificar y resolver gaps en la spec
+3. `/sdd:plan` — Diseñar enfoque técnico + generar ADR
+4. `/sdd:tasks` — Descomponer plan en tareas atómicas
+5. `/sdd:implement TASK-NNN` — Implementar una tarea por vez
+6. `/sdd:validate` — Verificar que la implementación cumple la spec
+
+Estado en `.sdd/state.json`. Ver estado actual con `/sdd:status`.
+Principios y restricciones: `constitution.md` (tiene precedencia sobre este archivo).

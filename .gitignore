@@ -45,3 +45,7 @@ desktop.ini
 # Coverage
 coverage/
 .nyc_output/
+.sdd/api-docs/
+
+# Base de datos SQLite — el archivo .gitkeep trackea el directorio, los .db no se versionan
+data/*.db

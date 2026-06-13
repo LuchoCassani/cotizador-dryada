@@ -1,13 +1,52 @@
-import { JsonPricesRepository } from './repositories/json-prices.repository';
-import { InMemoryQuoteRepository } from './repositories/in-memory-quote.repository';
+import { SqliteQuoteRepository } from './repositories/sqlite-quote.repository';
 import { QuoteService } from './services/quote.service';
 import { EmailService } from './services/email.service';
 import { StlAnalysis } from './services/stl-processor';
+import type { IPricesRepository } from './repositories/prices.repository';
+import { initDatabase } from './db/init';
+import { SqliteMachinesRepository } from './repositories/sqlite-machines.repository';
+import { SqliteMaterialsRepository } from './repositories/sqlite-materials.repository';
+import { SqliteGlobalParamsRepository } from './repositories/sqlite-global-params.repository';
 
-// Único punto de inyección de dependencias (ver rules.md R1, R3)
-export const pricesRepo   = new JsonPricesRepository();
-export const quoteRepo    = new InMemoryQuoteRepository();
-export const quoteService = new QuoteService(pricesRepo, quoteRepo);
+const DB_PATH = process.env.DB_PATH ?? './data/cotizador.db';
+const db = initDatabase(DB_PATH);
+
+const machinesRepo  = new SqliteMachinesRepository(db);
+const materialsRepo = new SqliteMaterialsRepository(db);
+const paramsRepo    = new SqliteGlobalParamsRepository(db);
+
+// Adapter temporal hasta SPEC-C (fórmula con parámetros globales)
+const pricesAdapter: IPricesRepository = {
+  getMateriales: async () => {
+    const all = await materialsRepo.getAll();
+    return all
+      .filter((m) => m.activo)
+      .map((m) => ({
+        id: m.id,
+        nombre: m.nombre,
+        precioGramo: m.precioPorCartucho750gEUR / 750,
+        densidad: m.densidadGCm3,
+      }));
+  },
+  getMaterialById: async (id: string) => {
+    const m = await materialsRepo.getById(id);
+    if (!m) return null;
+    return {
+      id: m.id,
+      nombre: m.nombre,
+      precioGramo: m.precioPorCartucho750gEUR / 750,
+      densidad: m.densidadGCm3,
+    };
+  },
+  getCostoInicio: async () => {
+    const params = await paramsRepo.get();
+    return params.costosAdicionalesUsd;
+  },
+};
+
+export const pricesRepo   = pricesAdapter;
+export const quoteRepo    = new SqliteQuoteRepository(db);
+export const quoteService = new QuoteService(pricesAdapter, quoteRepo);
 export const emailService = new EmailService();
 
 // Cache en memoria de uploads pendientes de cotizar.

@@ -1,0 +1,22 @@
+{
+  "SessionStart": {
+    "enabled": false,
+    "action": "sdd-status",
+    "description": "Show SDD status at the beginning of each session"
+  },
+  "PrePlan": {
+    "enabled": true,
+    "action": "check-api-docs",
+    "description": "Block /sdd:plan if external services are detected without cached API documentation."
+  },
+  "PreCompact": {
+    "enabled": false,
+    "action": "save-state",
+    "description": "Save session notes to state.json before context compaction"
+  },
+  "PostImplement": {
+    "enabled": false,
+    "action": "sdd-validate",
+    "description": "Run validation automatically after all tasks are completed"
+  }
+}
