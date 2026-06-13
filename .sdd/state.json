@@ -18,7 +18,7 @@
     "security": { "scaffolded": 0, "unscaffolded": 1 },
     "configurability": { "scaffolded": 0, "unscaffolded": 1 }
   },
-  "completed_features": 4,
+  "completed_features": 5,
   "milestones": {
     "adr_explained": true,
     "orphan_code_explained": false,
@@ -33,10 +33,10 @@
   },
   "features": {
     "prusaslicer-integration": {
-      "state": "planned",
+      "state": "completed",
       "spec_path": "specs/prusaslicer-integration/spec.md",
       "plan_path": "specs/prusaslicer-integration/plan.md",
-      "tasks_path": null,
+      "tasks_path": "specs/prusaslicer-integration/tasks.md",
       "prd_reference": null,
       "transitions": [
         {
@@ -56,9 +56,38 @@
           "to": "planned",
           "at": "2026-06-13T23:55:00Z",
           "command": "sdd-plan"
+        },
+        {
+          "from": "planned",
+          "to": "tasked",
+          "at": "2026-06-14T00:10:00Z",
+          "command": "sdd-tasks"
+        },
+        {
+          "from": "implementing",
+          "to": "validating",
+          "at": "2026-06-14T22:52:00Z",
+          "command": "sdd-implement"
+        },
+        {
+          "from": "validating",
+          "to": "completed",
+          "at": "2026-06-14T23:05:00Z",
+          "command": "sdd-validate"
         }
       ],
-      "tasks": {}
+      "tasks": {
+        "TASK-001": { "status": "completed", "title": "Definir IPrusaSlicerService y SliceResult", "completed_at": "2026-06-14T00:15:00Z" },
+        "TASK-002": { "status": "completed", "title": "Guardar STL en disco en el upload handler", "completed_at": "2026-06-14T00:15:00Z" },
+        "TASK-003": { "status": "completed", "title": "Implementar PrusaSlicerService", "completed_at": "2026-06-14T00:25:00Z" },
+        "TASK-004": { "status": "completed", "title": "Actualizar QuoteService — lógica PrusaSlicer y fallback", "completed_at": "2026-06-14T00:35:00Z" },
+        "TASK-005": { "status": "completed", "title": "Actualizar app.ts — instanciar y conectar PrusaSlicerService", "completed_at": "2026-06-14T00:35:00Z" },
+        "TASK-006": { "status": "completed", "title": "Agregar weightSource a tipos del frontend", "completed_at": "2026-06-14T00:15:00Z" },
+        "TASK-007": { "status": "completed", "title": "Display condicional en PasoResultado", "completed_at": "2026-06-14T00:25:00Z" },
+        "TASK-008": { "status": "completed", "title": "Display condicional en CotizacionPDF", "completed_at": "2026-06-14T00:25:00Z" },
+        "TASK-009": { "status": "completed", "title": "Tests unitarios para PrusaSlicerService", "completed_at": "2026-06-14T00:35:00Z" },
+        "TASK-010": { "status": "completed", "title": "Actualizar tests de QuoteService con mock de IPrusaSlicerService", "completed_at": "2026-06-14T22:52:00Z" }
+      }
     },
     "machine-selection": {
       "state": "completed",
