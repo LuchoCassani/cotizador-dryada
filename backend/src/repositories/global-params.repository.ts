@@ -6,6 +6,7 @@ export interface ParametrosGlobales {
   desperdicioPct: number;
   costosAdicionalesUsd: number;
   coeficienteGanancia: number;
+  piezasPorDiaEstimadas: number;
   actualizadaAt: string;
 }
 

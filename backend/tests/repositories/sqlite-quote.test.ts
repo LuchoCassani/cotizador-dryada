@@ -14,6 +14,7 @@ function makeRecord(overrides: Partial<QuoteRecord> = {}): QuoteRecord {
     fecha: new Date('2026-06-13T10:00:00.000Z'),
     archivoStl: 'upload-abc123',
     materialId: 'mat-pla-blanco',
+    maquinaId: 'maq-001',
     cantidad: 2,
     volumenCm3: 45.5,
     areaCm2: 120.3,

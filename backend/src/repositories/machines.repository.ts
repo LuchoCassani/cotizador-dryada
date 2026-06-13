@@ -10,9 +10,18 @@ export interface Maquina {
   creadaAt: string;
 }
 
+export interface MaquinaPublica {
+  id: string;
+  nombre: string;
+  capacidadXmm: number;
+  capacidadYmm: number;
+  capacidadZmm: number;
+}
+
 export interface IMachinesRepository {
   getAll(): Promise<Maquina[]>;
   getById(id: string): Promise<Maquina | null>;
+  getActivas(): Promise<MaquinaPublica[]>;
   create(data: Omit<Maquina, 'id' | 'creadaAt'>): Promise<Maquina>;
   update(id: string, data: Partial<Omit<Maquina, 'id' | 'creadaAt'>>): Promise<Maquina | null>;
   delete(id: string): Promise<void>;

@@ -6,6 +6,7 @@ export interface QuoteRecord {
   fecha: Date;
   archivoStl: string;
   materialId: string;
+  maquinaId: string;
   cantidad: number;
   volumenCm3: number;
   areaCm2: number;

@@ -53,6 +53,7 @@ export function initDatabase(dbPath: string): Database.Database {
         desperdicio_pct             REAL    NOT NULL,
         costos_adicionales_usd      REAL    NOT NULL,
         coeficiente_ganancia        REAL    NOT NULL,
+        piezas_por_dia_estimadas    INTEGER NOT NULL DEFAULT 20,
         actualizada_at              TEXT    NOT NULL
       );
 
@@ -62,6 +63,7 @@ export function initDatabase(dbPath: string): Database.Database {
         fecha               TEXT    NOT NULL,
         archivo_stl         TEXT    NOT NULL,
         material_id         TEXT    NOT NULL REFERENCES materiales(id),
+        maquina_id          TEXT    NOT NULL DEFAULT '',
         cantidad            INTEGER NOT NULL,
         volumen_cm3         REAL    NOT NULL,
         area_cm2            REAL    NOT NULL,
@@ -76,6 +78,10 @@ export function initDatabase(dbPath: string): Database.Database {
   } catch {
     throw new Error(`No se pudo abrir la base de datos en ${dbPath}.`);
   }
+
+  // Migraciones aditivas — no destruyen datos en DBs existentes
+  try { db.exec('ALTER TABLE parametros_globales ADD COLUMN piezas_por_dia_estimadas INTEGER NOT NULL DEFAULT 20'); } catch { /* columna ya existe */ }
+  try { db.exec("ALTER TABLE cotizaciones ADD COLUMN maquina_id TEXT NOT NULL DEFAULT ''"); } catch { /* columna ya existe */ }
 
   const { n } = db.prepare('SELECT COUNT(*) as n FROM maquinas').get() as { n: number };
   if (n === 0) {
@@ -95,9 +101,9 @@ export function initDatabase(dbPath: string): Database.Database {
 
     const insertParams = db.prepare(`
       INSERT OR IGNORE INTO parametros_globales
-        (id, tasa_eur_usd, tasa_ars_usd, tarifa_mano_obra_usd_hora, horas_por_pieza, desperdicio_pct, costos_adicionales_usd, coeficiente_ganancia, actualizada_at)
+        (id, tasa_eur_usd, tasa_ars_usd, tarifa_mano_obra_usd_hora, horas_por_pieza, desperdicio_pct, costos_adicionales_usd, coeficiente_ganancia, piezas_por_dia_estimadas, actualizada_at)
       VALUES
-        (1, @tasaEurUsd, @tasaArsUsd, @tarifaManoObraUsdHora, @horasPorPieza, @desperdicioPct, @costosAdicionalesUsd, @coeficienteGanancia, @actualizadaAt)
+        (1, @tasaEurUsd, @tasaArsUsd, @tarifaManoObraUsdHora, @horasPorPieza, @desperdicioPct, @costosAdicionalesUsd, @coeficienteGanancia, @piezasPorDiaEstimadas, @actualizadaAt)
     `);
 
     db.transaction(() => {

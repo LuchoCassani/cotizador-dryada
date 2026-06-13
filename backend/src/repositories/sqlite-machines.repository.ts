@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { v4 as uuid } from 'uuid';
-import type { Maquina, IMachinesRepository } from './machines.repository';
+import type { Maquina, MaquinaPublica, IMachinesRepository } from './machines.repository';
 
 interface MaquinaRow {
   id: string;
@@ -37,8 +37,21 @@ export class SqliteMachinesRepository implements IMachinesRepository {
   }
 
   getById(id: string): Promise<Maquina | null> {
-    const row = this.db.prepare('SELECT * FROM maquinas WHERE id = ?').get(id) as MaquinaRow | undefined;
+    const row = this.db.prepare('SELECT * FROM maquinas WHERE id = ? AND activa = 1').get(id) as MaquinaRow | undefined;
     return Promise.resolve(row ? rowToMaquina(row) : null);
+  }
+
+  getActivas(): Promise<MaquinaPublica[]> {
+    const rows = this.db.prepare(
+      'SELECT id, nombre, capacidad_x_mm, capacidad_y_mm, capacidad_z_mm FROM maquinas WHERE activa = 1'
+    ).all() as Pick<MaquinaRow, 'id' | 'nombre' | 'capacidad_x_mm' | 'capacidad_y_mm' | 'capacidad_z_mm'>[];
+    return Promise.resolve(rows.map(r => ({
+      id: r.id,
+      nombre: r.nombre,
+      capacidadXmm: r.capacidad_x_mm,
+      capacidadYmm: r.capacidad_y_mm,
+      capacidadZmm: r.capacidad_z_mm,
+    })));
   }
 
   create(data: Omit<Maquina, 'id' | 'creadaAt'>): Promise<Maquina> {

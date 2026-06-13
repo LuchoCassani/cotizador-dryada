@@ -10,6 +10,7 @@ interface ParametrosRow {
   desperdicio_pct: number;
   costos_adicionales_usd: number;
   coeficiente_ganancia: number;
+  piezas_por_dia_estimadas: number;
   actualizada_at: string;
 }
 
@@ -22,6 +23,7 @@ function rowToParams(row: ParametrosRow): ParametrosGlobales {
     desperdicioPct: row.desperdicio_pct,
     costosAdicionalesUsd: row.costos_adicionales_usd,
     coeficienteGanancia: row.coeficiente_ganancia,
+    piezasPorDiaEstimadas: row.piezas_por_dia_estimadas,
     actualizadaAt: row.actualizada_at,
   };
 }
@@ -47,6 +49,7 @@ export class SqliteGlobalParamsRepository implements IGlobalParametersRepository
     if (data.desperdicioPct !== undefined) { setClauses.push('desperdicio_pct = @desperdicioPct'); params['desperdicioPct'] = data.desperdicioPct; }
     if (data.costosAdicionalesUsd !== undefined) { setClauses.push('costos_adicionales_usd = @costosAdicionalesUsd'); params['costosAdicionalesUsd'] = data.costosAdicionalesUsd; }
     if (data.coeficienteGanancia !== undefined) { setClauses.push('coeficiente_ganancia = @coeficienteGanancia'); params['coeficienteGanancia'] = data.coeficienteGanancia; }
+    if (data.piezasPorDiaEstimadas !== undefined) { setClauses.push('piezas_por_dia_estimadas = @piezasPorDiaEstimadas'); params['piezasPorDiaEstimadas'] = data.piezasPorDiaEstimadas; }
 
     this.db.prepare(`UPDATE parametros_globales SET ${setClauses.join(', ')} WHERE id = 1`).run(params);
 

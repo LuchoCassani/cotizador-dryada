@@ -8,6 +8,7 @@ interface CotizacionRow {
   fecha: string;
   archivo_stl: string;
   material_id: string;
+  maquina_id: string;
   cantidad: number;
   volumen_cm3: number;
   area_cm2: number;
@@ -24,6 +25,7 @@ function rowToRecord(row: CotizacionRow): QuoteRecord {
     fecha: new Date(row.fecha),
     archivoStl: row.archivo_stl,
     materialId: row.material_id,
+    maquinaId: row.maquina_id,
     cantidad: row.cantidad,
     volumenCm3: row.volumen_cm3,
     areaCm2: row.area_cm2,
@@ -44,10 +46,10 @@ export class SqliteQuoteRepository implements IQuoteRepository {
   async save(record: QuoteRecord): Promise<void> {
     this.db.prepare(`
       INSERT INTO cotizaciones
-        (id, empleado_id, fecha, archivo_stl, material_id, cantidad,
+        (id, empleado_id, fecha, archivo_stl, material_id, maquina_id, cantidad,
          volumen_cm3, area_cm2, gramos_total, precio_final_usd, complejidad, observaciones)
       VALUES
-        (@id, @empleadoId, @fecha, @archivoStl, @materialId, @cantidad,
+        (@id, @empleadoId, @fecha, @archivoStl, @materialId, @maquinaId, @cantidad,
          @volumenCm3, @areaCm2, @gramosTotal, @precioFinalUSD, @complejidad, @observaciones)
     `).run({
       id: record.id,
@@ -55,6 +57,7 @@ export class SqliteQuoteRepository implements IQuoteRepository {
       fecha: record.fecha.toISOString(),
       archivoStl: record.archivoStl,
       materialId: record.materialId,
+      maquinaId: record.maquinaId,
       cantidad: record.cantidad,
       volumenCm3: record.volumenCm3,
       areaCm2: record.areaCm2,
