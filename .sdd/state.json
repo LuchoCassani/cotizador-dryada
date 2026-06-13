@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "project": "cotizador-dryada",
   "initialized_at": "2026-06-13T00:00:00Z",
-  "active_feature": "sqlite-quote-repository",
+  "active_feature": "prusaslicer-integration",
   "last_session_notes": null,
   "last_session_end": null,
   "coaching_profile": {
@@ -18,7 +18,7 @@
     "security": { "scaffolded": 0, "unscaffolded": 1 },
     "configurability": { "scaffolded": 0, "unscaffolded": 1 }
   },
-  "completed_features": 2,
+  "completed_features": 4,
   "milestones": {
     "adr_explained": true,
     "orphan_code_explained": false,
@@ -32,6 +32,130 @@
     "path": "specs/prd.md"
   },
   "features": {
+    "prusaslicer-integration": {
+      "state": "planned",
+      "spec_path": "specs/prusaslicer-integration/spec.md",
+      "plan_path": "specs/prusaslicer-integration/plan.md",
+      "tasks_path": null,
+      "prd_reference": null,
+      "transitions": [
+        {
+          "from": "drafting",
+          "to": "specified",
+          "at": "2026-06-13T23:30:00Z",
+          "command": "sdd-specify"
+        },
+        {
+          "from": "specified",
+          "to": "clarified",
+          "at": "2026-06-13T23:45:00Z",
+          "command": "sdd-clarify"
+        },
+        {
+          "from": "clarified",
+          "to": "planned",
+          "at": "2026-06-13T23:55:00Z",
+          "command": "sdd-plan"
+        }
+      ],
+      "tasks": {}
+    },
+    "machine-selection": {
+      "state": "completed",
+      "spec_path": "specs/machine-selection/spec.md",
+      "plan_path": "specs/machine-selection/plan.md",
+      "tasks_path": "specs/machine-selection/tasks.md",
+      "prd_reference": null,
+      "transitions": [
+        {
+          "from": "drafting",
+          "to": "specified",
+          "at": "2026-06-13T18:00:00Z",
+          "command": "sdd-specify"
+        },
+        {
+          "from": "specified",
+          "to": "clarified",
+          "at": "2026-06-13T19:00:00Z",
+          "command": "sdd-clarify"
+        },
+        {
+          "from": "clarified",
+          "to": "planned",
+          "at": "2026-06-13T19:30:00Z",
+          "command": "sdd-plan"
+        },
+        {
+          "from": "planned",
+          "to": "tasked",
+          "at": "2026-06-13T20:00:00Z",
+          "command": "sdd-tasks"
+        },
+        {
+          "from": "implementing",
+          "to": "completed",
+          "at": "2026-06-13T22:00:00Z",
+          "command": "sdd-validate"
+        }
+      ],
+      "tasks": {
+        "TASK-001": { "status": "completed", "title": "Definir IMachinesRepository, Maquina y MaquinaPublica", "completed_at": "2026-06-13T20:10:00Z" },
+        "TASK-002": { "status": "completed", "title": "Agregar piezasPorDiaEstimadas a ParametrosGlobales", "completed_at": "2026-06-13T20:10:00Z" },
+        "TASK-003": { "status": "completed", "title": "Agregar maquinaId a QuoteRecord", "completed_at": "2026-06-13T20:10:00Z" },
+        "TASK-004": { "status": "completed", "title": "Actualizar tipos frontend (Maquina, CotizacionResult)", "completed_at": "2026-06-13T20:10:00Z" },
+        "TASK-005": { "status": "completed", "title": "Implementar getActivas() en SqliteMachinesRepository", "completed_at": "2026-06-13T20:20:00Z" },
+        "TASK-006": { "status": "completed", "title": "Actualizar SqliteGlobalParamsRepository para piezasPorDiaEstimadas", "completed_at": "2026-06-13T20:20:00Z" },
+        "TASK-007": { "status": "completed", "title": "Actualizar SqliteQuoteRepository para maquina_id", "completed_at": "2026-06-13T20:20:00Z" },
+        "TASK-008": { "status": "completed", "title": "Migrations DB y seed de piezasPorDiaEstimadas", "completed_at": "2026-06-13T20:20:00Z" },
+        "TASK-009": { "status": "completed", "title": "Actualizar QuoteService y makeRepos en tests existentes", "completed_at": "2026-06-13T21:00:00Z" },
+        "TASK-010": { "status": "completed", "title": "Crear machines.route.ts y actualizar app.ts", "completed_at": "2026-06-13T21:30:00Z" },
+        "TASK-011": { "status": "completed", "title": "Tests de lógica de máquina (quote.service.machine.test.ts)", "completed_at": "2026-06-13T21:30:00Z" },
+        "TASK-012": { "status": "completed", "title": "Agregar getMachines() a frontend api.ts", "completed_at": "2026-06-13T21:30:00Z" },
+        "TASK-013": { "status": "completed", "title": "Agregar fila amortización en PasoResultado", "completed_at": "2026-06-13T21:30:00Z" },
+        "TASK-014": { "status": "completed", "title": "Agregar fila amortización en CotizacionPDF", "completed_at": "2026-06-13T21:30:00Z" },
+        "TASK-015": { "status": "completed", "title": "Selector de máquina en PasoCotizar", "completed_at": "2026-06-13T21:40:00Z" }
+      }
+    },
+    "formula-parametros-globales": {
+      "state": "completed",
+      "spec_path": "specs/formula-parametros-globales/spec.md",
+      "plan_path": "specs/formula-parametros-globales/plan.md",
+      "tasks_path": "specs/formula-parametros-globales/tasks.md",
+      "prd_reference": null,
+      "transitions": [
+        {
+          "from": "drafting",
+          "to": "specified",
+          "at": "2026-06-13T16:30:00Z",
+          "command": "sdd-specify"
+        },
+        {
+          "from": "specified",
+          "to": "clarified",
+          "at": "2026-06-13T16:45:00Z",
+          "command": "sdd-clarify"
+        },
+        {
+          "from": "clarified",
+          "to": "planned",
+          "at": "2026-06-13T16:50:00Z",
+          "command": "sdd-plan"
+        },
+        {
+          "from": "planned",
+          "to": "tasked",
+          "at": "2026-06-13T17:00:00Z",
+          "command": "sdd-tasks"
+        }
+      ],
+      "tasks": {
+        "TASK-001": { "status": "completed", "title": "Actualizar QuoteService con nueva fórmula y nueva dependencia", "completed_at": "2026-06-13T17:03:00Z" },
+        "TASK-002": { "status": "completed", "title": "Corregir EUR→USD en adapter e inyectar paramsRepo en app.ts", "completed_at": "2026-06-13T17:03:00Z" },
+        "TASK-003": { "status": "completed", "title": "Agregar costoManoObraUSD al tipo CotizacionResult del frontend", "completed_at": "2026-06-13T17:03:00Z" },
+        "TASK-004": { "status": "completed", "title": "Agregar fila Mano de obra en CotizacionPDF", "completed_at": "2026-06-13T17:03:00Z" },
+        "TASK-005": { "status": "completed", "title": "Tests unitarios para QuoteService", "completed_at": "2026-06-13T17:03:00Z" }
+      }
+    },
     "sqlite-quote-repository": {
       "state": "completed",
       "spec_path": "specs/sqlite-quote-repository/spec.md",
