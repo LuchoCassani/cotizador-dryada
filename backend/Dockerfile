@@ -45,12 +45,7 @@ RUN ln -s /opt/prusaslicer/bin/prusa-slicer /usr/local/bin/prusa-slicer
 
 ENV LD_LIBRARY_PATH=/opt/prusaslicer/lib
 
-RUN addgroup --system appgroup \
-    && adduser --system --ingroup appgroup appuser \
-    && mkdir -p /app/data \
-    && chown appuser:appgroup /app/data
-
-USER appuser
+RUN mkdir -p /app/data
 
 EXPOSE 3001
 
