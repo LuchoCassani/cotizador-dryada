@@ -79,13 +79,9 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy frontend
-        run: |
-          railway up --service frontend \
-            --build-arg VITE_API_URL=${{ vars.RAILWAY_BACKEND_URL }} \
-            --build-arg VITE_API_TOKEN=${{ secrets.API_TOKEN }} \
-            --detach
+        run: railway up --service frontend --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-      # RAILWAY_FRONTEND_URL se configura en Railway → backend → Variables como FRONTEND_URL
-      # para que el CORS del backend acepte el dominio del frontend en producción
+      # VITE_API_URL y VITE_API_TOKEN se configuran como variables en el servicio frontend de Railway
+      # Railway las inyecta automáticamente como build args al hacer docker build
