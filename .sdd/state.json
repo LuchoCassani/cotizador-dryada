@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "project": "cotizador-dryada",
   "initialized_at": "2026-06-13T00:00:00Z",
-  "active_feature": "prusaslicer-integration",
+  "active_feature": "docker-railway-deploy",
   "last_session_notes": null,
   "last_session_end": null,
   "coaching_profile": {
@@ -11,12 +11,12 @@
     "measurable_outcomes": { "scaffolded": 0, "unscaffolded": 1 },
     "non_goals": { "scaffolded": 0, "unscaffolded": 1 },
     "quantified_nfrs": { "scaffolded": 1, "unscaffolded": 1 },
-    "edge_cases": { "scaffolded": 0, "unscaffolded": 2 },
-    "testable_criteria": { "scaffolded": 1, "unscaffolded": 1 },
-    "data_models": { "scaffolded": 0, "unscaffolded": 2 },
-    "api_contracts": { "scaffolded": 0, "unscaffolded": 1 },
-    "security": { "scaffolded": 0, "unscaffolded": 1 },
-    "configurability": { "scaffolded": 0, "unscaffolded": 1 }
+    "edge_cases": { "scaffolded": 1, "unscaffolded": 2 },
+    "testable_criteria": { "scaffolded": 1, "unscaffolded": 2 },
+    "data_models": { "scaffolded": 1, "unscaffolded": 2 },
+    "api_contracts": { "scaffolded": 0, "unscaffolded": 2 },
+    "security": { "scaffolded": 0, "unscaffolded": 2 },
+    "configurability": { "scaffolded": 1, "unscaffolded": 1 }
   },
   "completed_features": 5,
   "milestones": {
@@ -240,6 +240,54 @@
         "TASK-002": { "status": "completed", "title": "Implementar SqliteQuoteRepository", "completed_at": "2026-06-13T15:58:10Z" },
         "TASK-003": { "status": "completed", "title": "Tests para SqliteQuoteRepository", "completed_at": "2026-06-13T15:58:33Z" },
         "TASK-004": { "status": "completed", "title": "Actualizar app.ts con SqliteQuoteRepository", "completed_at": "2026-06-13T15:58:10Z" }
+      }
+    },
+    "docker-railway-deploy": {
+      "state": "implementing",
+      "spec_path": "specs/docker-railway-deploy/spec.md",
+      "plan_path": "specs/docker-railway-deploy/plan.md",
+      "tasks_path": "specs/docker-railway-deploy/tasks.md",
+      "prd_reference": null,
+      "transitions": [
+        {
+          "from": "drafting",
+          "to": "specified",
+          "at": "2026-06-14T00:00:00Z",
+          "command": "sdd-specify"
+        },
+        {
+          "from": "specified",
+          "to": "clarified",
+          "at": "2026-06-14T23:30:00Z",
+          "command": "sdd-clarify"
+        },
+        {
+          "from": "clarified",
+          "to": "planned",
+          "at": "2026-06-14T23:50:00Z",
+          "command": "sdd-plan"
+        },
+        {
+          "from": "planned",
+          "to": "tasked",
+          "at": "2026-06-14T23:58:00Z",
+          "command": "sdd-tasks"
+        },
+        {
+          "from": "tasked",
+          "to": "implementing",
+          "at": "2026-06-14T23:59:00Z",
+          "command": "sdd-implement"
+        }
+      ],
+      "tasks": {
+        "TASK-001": { "status": "completed", "title": "Reescribir backend/Dockerfile con Debian Slim, better-sqlite3 nativo y PrusaSlicer", "completed_at": "2026-06-14T23:59:00Z" },
+        "TASK-002": { "status": "completed", "title": "Agregar data/*.db a backend/.dockerignore", "completed_at": "2026-06-15T00:05:00Z" },
+        "TASK-003": { "status": "completed", "title": "Agregar bind mount de SQLite en docker-compose.yml", "completed_at": "2026-06-15T00:05:00Z" },
+        "TASK-004": { "status": "completed", "title": "Verificar endpoint GET /health en backend/src/server.ts", "completed_at": "2026-06-15T00:05:00Z" },
+        "TASK-005": { "status": "completed", "title": "Verificar archivos de frontend contra spec", "completed_at": "2026-06-15T00:05:00Z" },
+        "TASK-006": { "status": "completed", "title": "Verificar .github/workflows/deploy.yml contra spec", "completed_at": "2026-06-15T00:05:00Z" },
+        "TASK-007": { "status": "pending", "title": "Setup Railway y primer deploy" }
       }
     },
     "sqlite-data-model": {
