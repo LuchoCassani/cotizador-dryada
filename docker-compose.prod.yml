@@ -4,7 +4,7 @@ services:
     image: ghcr.io/luchocassani/cotizador-dryada-backend:latest
     volumes:
       - /opt/cotizador/data:/app/data
-    env_file: .env
+    env_file: backend.env
     restart: unless-stopped
     networks:
       - interna
@@ -13,7 +13,7 @@ services:
     image: ghcr.io/luchocassani/cotizador-dryada-frontend:latest
     ports:
       - "80:80"
-    env_file: .env
+    env_file: frontend.env
     depends_on:
       - backend
     restart: unless-stopped

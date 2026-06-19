@@ -83,7 +83,9 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/luchocassani/cotizador-dryada-backend:latest
+          tags: |
+            ghcr.io/luchocassani/cotizador-dryada-backend:${{ github.sha }}
+            ghcr.io/luchocassani/cotizador-dryada-backend:latest
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
@@ -93,22 +95,34 @@ jobs:
           build-args: |
             VITE_API_URL=
             VITE_API_TOKEN=
-          tags: ghcr.io/luchocassani/cotizador-dryada-frontend:latest
+          tags: |
+            ghcr.io/luchocassani/cotizador-dryada-frontend:${{ github.sha }}
+            ghcr.io/luchocassani/cotizador-dryada-frontend:latest
 
-      - name: Setup SSH key
+      - name: Render compose file with commit SHA
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          sed "s/:latest/:${IMAGE_TAG}/g" docker-compose.prod.yml > /tmp/docker-compose.deploy.yml
+
+      - name: Setup SSH
         env:
           ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_KNOWN_HOSTS: ${{ secrets.ORACLE_KNOWN_HOSTS }}
         run: |
-          echo "$ORACLE_SSH_KEY" > /tmp/deploy_key
-          chmod 600 /tmp/deploy_key
+          mkdir -p ~/.ssh
+          echo "$ORACLE_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "$ORACLE_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Copy compose file to VM
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
-          scp -o StrictHostKeyChecking=no -i /tmp/deploy_key \
-            docker-compose.prod.yml \
+          scp -i ~/.ssh/deploy_key \
+            /tmp/docker-compose.deploy.yml \
             "${ORACLE_USER}@${ORACLE_HOST}:/opt/cotizador/docker-compose.prod.yml"
 
       - name: Deploy on VM
@@ -116,10 +130,10 @@ jobs:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+          ssh -i ~/.ssh/deploy_key \
             "${ORACLE_USER}@${ORACLE_HOST}" \
             'docker compose -f /opt/cotizador/docker-compose.prod.yml pull && docker compose -f /opt/cotizador/docker-compose.prod.yml up -d && docker image prune -f'
 
       - name: Cleanup SSH key
         if: always()
-        run: rm -f /tmp/deploy_key
+        run: rm -f ~/.ssh/deploy_key
