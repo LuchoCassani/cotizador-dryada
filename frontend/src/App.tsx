@@ -7,12 +7,16 @@ import { PantallaInicio } from './components/screens/PantallaInicio'
 import { PasoSubirSTL } from './components/screens/PasoSubirSTL'
 import { PasoCotizar } from './components/screens/PasoCotizar'
 import { PasoResultado } from './components/screens/PasoResultado'
+import { AdminLogin } from './components/screens/AdminLogin'
+import { PanelAdmin } from './components/screens/PanelAdmin'
 import { CotizacionPDF } from './components/pdf/CotizacionPDF'
 import { numeroCotizacion } from './utils/format'
 import type { Step, UploadResult, CotizacionResult } from './types'
 import './App.css'
 
 export default function App() {
+  const [mode, setMode] = useState<'cotizacion' | 'admin'>('cotizacion')
+  const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!sessionStorage.getItem('admin_token'))
   const [step, setStep] = useState<Step>(0)
   const [empleado, setEmpleado] = useState('')
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
@@ -74,33 +78,46 @@ export default function App() {
   return (
     <div className="min-h-screen bg-dryada-gray-50 flex flex-col">
       <div className="max-w-[1280px] w-full mx-auto flex flex-col min-h-screen bg-white border-x border-dryada-gray-100">
-        <Topbar empleado={empleado} />
+        <Topbar empleado={empleado} onAdminClick={() => setMode('admin')} />
         <AccentBar />
-        <StepsBar step={step} />
+        {mode === 'cotizacion' && <StepsBar step={step} />}
 
         <main className="flex-1 flex flex-col">
-          {step === 0 && (
-            <PantallaInicio onStart={handleStart} />
-          )}
-          {step === 1 && (
-            <PasoSubirSTL onAnalysis={handleAnalysis} />
-          )}
-          {step === 2 && uploadResult && (
-            <PasoCotizar
-              uploadResult={uploadResult}
-              empleado={empleado}
-              onQuote={handleQuote}
-              onBack={() => setStep(1)}
-            />
-          )}
-          {step === 3 && quoteResult && (
-            <PasoResultado
-              result={quoteResult}
-              empleado={empleado}
-              onBack={() => setStep(2)}
-              onGeneratePdf={handleGeneratePdf}
-              onDownloadPdf={handleDownloadPdf}
-            />
+          {mode === 'admin' ? (
+            adminAuthenticated ? (
+              <PanelAdmin
+                onBack={() => setMode('cotizacion')}
+                onSessionExpired={() => setAdminAuthenticated(false)}
+              />
+            ) : (
+              <AdminLogin onLogin={() => setAdminAuthenticated(true)} />
+            )
+          ) : (
+            <>
+              {step === 0 && (
+                <PantallaInicio onStart={handleStart} />
+              )}
+              {step === 1 && (
+                <PasoSubirSTL onAnalysis={handleAnalysis} />
+              )}
+              {step === 2 && uploadResult && (
+                <PasoCotizar
+                  uploadResult={uploadResult}
+                  empleado={empleado}
+                  onQuote={handleQuote}
+                  onBack={() => setStep(1)}
+                />
+              )}
+              {step === 3 && quoteResult && (
+                <PasoResultado
+                  result={quoteResult}
+                  empleado={empleado}
+                  onBack={() => setStep(2)}
+                  onGeneratePdf={handleGeneratePdf}
+                  onDownloadPdf={handleDownloadPdf}
+                />
+              )}
+            </>
           )}
         </main>
       </div>

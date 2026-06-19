@@ -394,7 +394,7 @@
       }
     },
     "admin-panel": {
-      "state": "implementing",
+      "state": "validating",
       "spec_path": "specs/admin-panel/spec.md",
       "plan_path": "specs/admin-panel/plan.md",
       "tasks_path": "specs/admin-panel/tasks.md",
@@ -448,8 +448,8 @@
         "TASK-014": { "status": "completed", "title": "Crear TabMateriales", "completed_at": "2026-06-19T22:30:00Z" },
         "TASK-015": { "status": "completed", "title": "Crear TabMaquinas", "completed_at": "2026-06-19T22:30:00Z" },
         "TASK-016": { "status": "completed", "title": "Crear TabParametros", "completed_at": "2026-06-19T21:00:00Z" },
-        "TASK-017": { "status": "pending", "title": "Crear PanelAdmin" },
-        "TASK-018": { "status": "pending", "title": "Integrar panel admin en App.tsx y Topbar" }
+        "TASK-017": { "status": "completed", "title": "Crear PanelAdmin", "completed_at": "2026-06-19T22:45:00Z" },
+        "TASK-018": { "status": "completed", "title": "Integrar panel admin en App.tsx y Topbar", "completed_at": "2026-06-19T22:45:00Z" }
       }
     }
   },

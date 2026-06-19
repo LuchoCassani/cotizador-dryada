@@ -264,7 +264,7 @@ El formulario precarga con los valores actuales. Intentar guardar con un campo e
 
 ## TASK-017: Crear PanelAdmin
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-002, CA-006, CA-007, CA-009, C-3
 **Complexity**: M
 **Depends on**: TASK-014, TASK-015, TASK-016
@@ -280,7 +280,7 @@ El componente renderiza los tres tabs y cambia entre ellos. "Volver" no limpia e
 
 ## TASK-018: Integrar panel admin en App.tsx y Topbar
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001, CA-009
 **Complexity**: M
 **Depends on**: TASK-011, TASK-017
