@@ -38,8 +38,8 @@ try {
 const db = initDatabase(DB_PATH);
 
 export const machinesRepo  = new SqliteMachinesRepository(db);
-const materialsRepo = new SqliteMaterialsRepository(db);
-const paramsRepo    = new SqliteGlobalParamsRepository(db);
+export const materialsRepo = new SqliteMaterialsRepository(db);
+export const paramsRepo    = new SqliteGlobalParamsRepository(db);
 
 const pricesAdapter: IPricesRepository = {
   getMateriales: async () => {

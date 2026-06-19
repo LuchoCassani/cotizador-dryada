@@ -40,7 +40,7 @@ El archivo compila sin errores (`npx tsc --noEmit` en `frontend/`). Las cuatro i
 
 ## TASK-003: Crear admin.route.ts con endpoint de login
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001, C-1, C-3
 **Complexity**: M
 **Depends on**: TASK-001
@@ -56,7 +56,7 @@ El archivo existe y exporta `adminRoute`. `POST /api/admin/login` con contraseñ
 
 ## TASK-004: Agregar rutas CRUD de materiales a admin.route.ts
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-002, CA-003, CA-004, CA-005, C-4
 **Complexity**: M
 **Depends on**: TASK-003
@@ -72,7 +72,7 @@ Agregar las 4 rutas de materiales al plugin `adminRoute`. `GET /api/admin/materi
 
 ## TASK-005: Agregar rutas CRUD de máquinas a admin.route.ts
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-006, C-4
 **Complexity**: M
 **Depends on**: TASK-003
@@ -88,7 +88,7 @@ Agregar las 4 rutas de máquinas al plugin `adminRoute` con el mismo patrón que
 
 ## TASK-006: Agregar rutas de parámetros globales a admin.route.ts
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-007
 **Complexity**: S
 **Depends on**: TASK-003
@@ -120,7 +120,7 @@ El backend arranca sin errores con y sin `ADMIN_PASSWORD` seteada. `POST /api/ad
 
 ## TASK-008: Tests unitarios de AdminSessionService
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001, C-3
 **Complexity**: S
 **Depends on**: TASK-001
@@ -152,7 +152,7 @@ Tests de integración usando SQLite en memoria (mismo patrón que los tests exis
 
 ## TASK-010: Agregar funciones admin a api.ts del frontend
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001, CA-002, CA-003, CA-004, CA-005, CA-006, CA-007, C-3
 **Complexity**: M
 **Depends on**: TASK-002
@@ -168,7 +168,7 @@ El archivo compila sin errores TypeScript. Las funciones están exportadas. `adm
 
 ## TASK-011: Crear pantalla AdminLogin
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001, C-3
 **Complexity**: S
 **Depends on**: TASK-010
