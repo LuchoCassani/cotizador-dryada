@@ -3,9 +3,8 @@ FROM node:20-bookworm-slim AS build
 
 WORKDIR /app
 
-# Herramientas para compilar better-sqlite3 (node-gyp) y extraer PrusaSlicer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 make g++ curl ca-certificates squashfs-tools \
+      python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
@@ -14,13 +13,6 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npx tsc && cp -r src/data dist/data && npm prune --omit=dev
-
-# Descargar y extraer PrusaSlicer — unsquashfs con offset fijo (validado en C-5)
-RUN curl -sL -o /tmp/PrusaSlicer.AppImage \
-      "https://github.com/prusa3d/PrusaSlicer/releases/download/version_2.8.1/PrusaSlicer-2.8.1%2Blinux-x64-newer-distros-GTK3-202409181416.AppImage" \
-    && unsquashfs -q -o 193728 -d /tmp/squashfs-root /tmp/PrusaSlicer.AppImage \
-    && mv /tmp/squashfs-root/usr /opt/prusaslicer \
-    && rm -rf /tmp/PrusaSlicer.AppImage /tmp/squashfs-root
 
 # ── Etapa 2: runtime ──────────────────────────────────────────
 FROM ghcr.io/luchocassani/dryada-prusaslicer-base:latest AS runtime

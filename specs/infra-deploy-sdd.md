@@ -1,637 +1,281 @@
 # Software Design Description — Infraestructura y Deploy
 ## Cotizador Dryada
 
-**Versión:** 1.0  
-**Fecha:** 2026-04-29  
-**Estado:** Draft — pendiente alineación
+**Versión:** 2.0
+**Fecha:** 2026-06-19
+**Estado:** Vigente
+
+> v1.0 describía un deploy sobre Railway (migrado en junio 2026 por agotamiento de créditos).
+> Esta versión refleja la infraestructura actual sobre Oracle Cloud Always Free.
 
 ---
 
 ## 1. Resumen ejecutivo
 
-La infraestructura del Cotizador Dryada se construye sobre **Railway** como plataforma de hosting, **Docker** como unidad de deploy, y **GitHub Actions** como pipeline de CI/CD. La estrategia prioriza la simplicidad operativa: el equipo de desarrollo no gestiona servidores, no configura nginx en producción manualmente, y no necesita conocimientos de DevOps para hacer un deploy.
+La infraestructura del Cotizador Dryada corre sobre **Oracle Cloud Always Free** (VM.Standard.E2.1.Micro), **Docker Compose** como runtime de producción, **GHCR** (GitHub Container Registry) como registro de imágenes, y **GitHub Actions** como pipeline de CI/CD.
 
-Railway fue elegido sobre alternativas como Fly.io, Render o un VPS propio por una razón específica: su modelo de proyecto con múltiples servicios permite pasar de N1 (solo backend + frontend) a N2 (agregar PostgreSQL) con un único click en el dashboard, sin migrar la aplicación ni cambiar variables de entorno del resto de los servicios. El costo operativo para el volumen de uso interno de Dryada es predecible y bajo.
+El modelo de deploy es pull-based: GitHub Actions buildea las imágenes, las publica en GHCR, y luego accede al VM por SSH para ejecutar `docker compose pull && docker compose up -d`. El VM nunca necesita acceso al código fuente — solo descarga imágenes ya construidas.
 
-La containerización con Docker garantiza paridad entre el entorno de desarrollo local y producción. El mismo `Dockerfile` que corre en la laptop de un desarrollador es el que Railway despliega. Esto elimina la clase de bugs "funciona en mi máquina" y permite que cualquier miembro del equipo pueda reproducir el entorno de producción localmente con un solo comando.
-
-El pipeline de GitHub Actions actúa como gatekeeper: ningún código llega a producción sin pasar por typecheck y tests. En N2, el pipeline también corre las migraciones de Prisma antes de activar el nuevo backend, garantizando que la base de datos esté siempre en el schema correcto antes de que el tráfico llegue al nuevo contenedor.
+La containerización con Docker garantiza paridad entre entornos: el mismo `Dockerfile` que corre localmente es el que se deploya. Agregar un `push` a `main` es todo lo que necesita un desarrollador para deployar.
 
 ---
 
-## 2. Arquitectura por nivel
+## 2. Infraestructura
 
-### Nivel 1 — JSON + memoria (estado actual)
+### VM Oracle Cloud
 
-**Servicios activos en Railway:**
+| Atributo | Valor |
+|---|---|
+| Shape | VM.Standard.E2.1.Micro |
+| CPU | 1 OCPU AMD x86_64 |
+| RAM | 1 GB |
+| Disco | 46.6 GB boot volume |
+| OS | Ubuntu 22.04 LTS |
+| IP pública | `161.153.198.86` |
+| Región | Chile (Latin America) |
+| Costo | Always Free — sin expiración |
+| Usuario SSH | `ubuntu` |
 
-| Servicio | Imagen | Puerto interno | URL pública |
-|---|---|---|---|
-| `backend` | `Dockerfile` en `backend/` | 3001 | `https://<RAILWAY_BACKEND_DOMAIN>` |
-| `frontend` | `Dockerfile` en `frontend/` | 80 | `https://<RAILWAY_FRONTEND_DOMAIN>` |
+**Firewall:** dos capas independientes que deben estar abiertas para tráfico entrante:
+1. **iptables** en la VM — reglas para puertos 80 y 443.
+2. **Oracle Security List** del VCN — ingress rules para puertos 80 y 22 desde `0.0.0.0/0`.
 
-**No existe en N1:** PostgreSQL, Redis, worker de slicer.
-
-**Comunicación entre servicios:**
-
-El frontend es una SPA que corre en el browser del usuario. Las llamadas a la API van del browser directamente al backend por URL pública. No hay comunicación server-to-server entre frontend y backend.
+### Archivos en el VM
 
 ```
-Browser → https://<RAILWAY_FRONTEND_DOMAIN>  → nginx sirve index.html + assets
-Browser → https://<RAILWAY_BACKEND_DOMAIN>/api/...  → Fastify
+/opt/cotizador/
+├── docker-compose.prod.yml   ← compose con imágenes SHA-pineadas (generado en CI)
+├── backend.env               ← variables de entorno del backend (no en git)
+├── frontend.env              ← variables de entorno del frontend (no en git)
+└── data/
+    ├── cotizador.db          ← SQLite (persistido entre deploys)
+    └── uploads/              ← STLs subidos (persistidos entre deploys)
 ```
 
-**Variables de entorno en N1:**
+---
 
-| Servicio | Variable | Descripción |
+## 3. Arquitectura de servicios
+
+### Topología
+
+```
+Internet
+    │
+    ▼
+[Oracle VM :80]
+    │
+    ▼
+[nginx (frontend container)]
+    │   sirve: index.html + assets estáticos
+    │   proxea: /api/* → http://backend:3001/api/*
+    │
+    ▼
+[backend container :3001]
+    │
+    ├── SQLite en /app/data/cotizador.db (bind mount → /opt/cotizador/data)
+    └── PrusaSlicer CLI en /usr/local/bin/prusa-slicer (incluido en imagen base)
+```
+
+Los dos contenedores comparten la red Docker interna `interna` (bridge). El backend no expone puertos al host — solo el frontend expone el 80. La comunicación frontend→backend usa el hostname `backend` de la red interna.
+
+### Imágenes
+
+| Imagen | Registro | Tag deploy |
 |---|---|---|
-| backend | `PORT` | Puerto en el que escucha Fastify (Railway lo inyecta automáticamente) |
-| backend | `SMTP_HOST` | Host del servidor SMTP |
-| backend | `SMTP_PORT` | Puerto SMTP (587 para STARTTLS) |
-| backend | `SMTP_USER` | Usuario Gmail |
-| backend | `SMTP_PASS` | App Password de Gmail |
-| backend | `EMAIL_FROM` | Nombre y dirección del remitente |
-| backend | `UPLOAD_MAX_MB` | Límite de tamaño de archivos STL |
-| frontend | `VITE_API_URL` | URL pública del backend, inyectada en build time |
+| `dryada-prusaslicer-base` | `ghcr.io/luchocassani/` | `:2.8.1` / `:latest` |
+| `cotizador-dryada-backend` | `ghcr.io/luchocassani/` | `:{git-sha}` |
+| `cotizador-dryada-frontend` | `ghcr.io/luchocassani/` | `:{git-sha}` |
 
-> **Nota sobre `PORT`**: Railway inyecta `PORT` automáticamente en cada servicio. El backend ya lo lee con `process.env.PORT ?? '3001'`. No hace falta definirlo manualmente en el dashboard.
+En producción, el compose usa tags SHA (`:{git-sha}`) generados en CI para garantizar que cada deploy apunta a una imagen inmutable. El tag `:latest` es conveniente pero mutable — no se usa para deployar.
 
 ---
 
-### Nivel 2 — PostgreSQL + PrusaSlicer
+## 4. Estructura de archivos Docker
 
-**Servicios activos en Railway:**
+### `docker/Dockerfile.prusaslicer`
 
-| Servicio | Imagen | Puerto interno | URL pública |
-|---|---|---|---|
-| `backend` | `Dockerfile` en `backend/` | 3001 | `https://<RAILWAY_BACKEND_DOMAIN>` |
-| `frontend` | `Dockerfile` en `frontend/` | 80 | `https://<RAILWAY_FRONTEND_DOMAIN>` |
-| `postgres` | `postgres:15` (nativo Railway) | 5432 | solo red interna |
+Imagen base publicada en GHCR. Se buildea manualmente vía `workflow_dispatch` solo cuando cambia la versión de PrusaSlicer. No se rebuildeea en cada deploy.
 
-**No existe en N2:** tabla `empleados`, panel de admin, `config_impresion` editable.
-
-**Comunicación entre servicios:**
-
-El backend accede a PostgreSQL por la red interna de Railway (no sale a internet):
-
-```
-backend → postgres.railway.internal:5432  (red privada, sin latencia de red pública)
-```
-
-**Variables de entorno adicionales en N2:**
-
-| Servicio | Variable | Descripción |
-|---|---|---|
-| backend | `DATABASE_URL` | Connection string de PostgreSQL. Railway lo genera automáticamente al vincular el servicio Postgres al backend. Formato: `postgresql://postgres:<pass>@postgres.railway.internal:5432/railway` |
-
-> **Cómo vincular en Railway**: en el dashboard, ir al servicio `backend` → Variables → Add Reference → seleccionar el servicio `postgres` → seleccionar `DATABASE_URL`. Railway genera y rota la variable automáticamente.
-
----
-
-### Nivel 3 — Panel admin, historial, empleados
-
-**Servicios activos en Railway:** los mismos que N2. No se agregan servicios nuevos.
-
-**Cambios en N3:**
-- El backend expone nuevas rutas para el panel de admin (`/api/admin/...`)
-- Se activa `PostgresEmpleadoRepository` en `app.ts`
-- Las variables de entorno no cambian
-
----
-
-## 3. Estructura de archivos Docker
+**Stages:**
+- `extractor` (`node:20-bookworm-slim`): descarga el AppImage de PrusaSlicer 2.8.1 y lo extrae con `unsquashfs -o 193728` (el offset es específico de esta versión — documentado en ADR-007).
+- `base` (`node:20-bookworm-slim`): copia `/opt/prusaslicer`, instala libs de sistema en runtime, crea symlink `/usr/local/bin/prusa-slicer`, setea `LD_LIBRARY_PATH`.
 
 ### `backend/Dockerfile`
 
-**Propósito:** compilar TypeScript en la etapa de build y generar una imagen de runtime mínima sin devDependencies ni código fuente.
-
-**Por qué multi-stage:** la imagen de build necesita TypeScript, tsx, y todos los `devDependencies`. La imagen de runtime solo necesita el JavaScript compilado y las `dependencies` de producción. Sin multi-stage, la imagen final pesa ~400MB. Con multi-stage, ~120MB.
-
 ```dockerfile
 # ── Etapa 1: build ────────────────────────────────────────────
-FROM node:20-alpine AS build
-
-WORKDIR /app
-
-# Instalar dependencias primero (capa cacheada si package.json no cambia)
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# Compilar TypeScript
-COPY tsconfig.json ./
-COPY src/ ./src/
-RUN npx tsc
+FROM node:20-bookworm-slim AS build
+# Compila TypeScript y better-sqlite3 (módulo nativo con node-gyp)
 
 # ── Etapa 2: runtime ──────────────────────────────────────────
-FROM node:20-alpine AS runtime
-
-WORKDIR /app
-
-# Solo dependencias de producción
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-
-# Copiar el build compilado y los datos estáticos
-COPY --from=build /app/dist ./dist
-COPY src/data/ ./dist/data/
-
-# Usuario no-root por seguridad
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
-
-EXPOSE 3001
-
-CMD ["node", "dist/server.js"]
+FROM ghcr.io/luchocassani/dryada-prusaslicer-base:latest AS runtime
+# Hereda Node 20 + PrusaSlicer 2.8.1 + libs de sistema
+# Solo copia dist/ y node_modules/ del stage build
 ```
 
-**Puerto expuesto:** 3001 (Railway lo mapea al `PORT` que inyecta).
-
----
-
-### `backend/.dockerignore`
-
-```
-node_modules/
-dist/
-.env
-.env.*
-*.log
-coverage/
-.DS_Store
-```
-
----
+El runtime usa la imagen base en lugar de `node:20-bookworm-slim` directamente, eliminando la descarga y extracción del AppImage de cada build (~5 minutos → segundos).
 
 ### `frontend/Dockerfile`
 
-**Propósito:** compilar la SPA con Vite en la etapa de build y servir los archivos estáticos con nginx en runtime.
+Multi-stage: build con Vite (`node:20-alpine`) → runtime con nginx (`nginx:alpine`).
 
-**Por qué nginx y no `vite preview`:** `vite preview` es una herramienta de revisión post-build, no un servidor de producción. No tiene control de caché, no comprime con gzip, no maneja bien el routing de SPA bajo carga. nginx:alpine es una imagen de ~10MB diseñada exactamente para este uso.
+El frontend no embebe la URL del backend en el bundle. En su lugar, nginx proxea `/api/` al backend en runtime, y el `API_TOKEN` se inyecta en la config de nginx vía `envsubst` al arrancar el contenedor (ver `frontend/docker-entrypoint.sh`).
 
-**Por qué `VITE_API_URL` como build arg:** Vite reemplaza las variables `VITE_*` en el bundle en tiempo de compilación. No son variables de runtime. Por eso se pasan como `ARG` al Dockerfile y se inyectan con `--build-arg` en el CI.
-
-```dockerfile
-# ── Etapa 1: build ────────────────────────────────────────────
-FROM node:20-alpine AS build
-
-WORKDIR /app
-
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY index.html vite.config.ts tsconfig*.json ./
-COPY src/ ./src/
-COPY public/ ./public/
-
-RUN npm run build
-
-# ── Etapa 2: runtime con nginx ────────────────────────────────
-FROM nginx:alpine AS runtime
-
-# Configuración personalizada de nginx (SPA routing + caché + gzip)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Archivos compilados por Vite
-COPY --from=build /app/dist /usr/share/nginx/html
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-```
-
----
-
-### `frontend/nginx.conf`
-
-```nginx
-server {
-    listen 80;
-    server_name _;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Compresión gzip para assets de texto
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript
-               text/xml application/xml image/svg+xml font/woff2;
-    gzip_min_length 1024;
-
-    # Assets con hash de contenido (Vite): caché agresiva de 1 año
-    location ~* \.(js|css|woff2?|png|jpg|svg|ico)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # index.html: nunca cachear (siempre verificar si hay nueva versión)
-    location = /index.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-    }
-
-    # SPA fallback: todas las rutas desconocidas → index.html
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
----
-
-### `frontend/.dockerignore`
-
-```
-node_modules/
-dist/
-.env
-.env.*
-*.log
-.DS_Store
-```
-
----
-
-### `docker-compose.yml` (raíz — desarrollo local)
-
-**Propósito:** levantar el stack completo localmente con hot reload en backend y HMR en frontend. PostgreSQL local para desarrollo de N2.
-
-**Por qué volúmenes de solo `src/`:** montar `node_modules/` desde el host en el contenedor rompe las dependencias nativas (binarios compilados para el OS del host vs Alpine). Se monta solo el código fuente; las dependencias se instalan dentro del contenedor.
+### `docker-compose.prod.yml`
 
 ```yaml
 services:
-
   backend:
-    build:
-      context: ./backend
-      target: build          # usa la etapa de build, que tiene tsx y devDeps
-    working_dir: /app
-    command: npx tsx watch src/server.ts
-    ports:
-      - "3001:3001"
+    image: ghcr.io/luchocassani/cotizador-dryada-backend:latest
     volumes:
-      - ./backend/src:/app/src:ro    # hot reload: cambios en src/ se reflejan al instante
-    env_file:
-      - ./backend/.env
-    environment:
-      PORT: "3001"
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - /opt/cotizador/data:/app/data
+    env_file: backend.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', ...)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks: [interna]
 
   frontend:
-    build:
-      context: ./frontend
-      target: build
-    working_dir: /app
-    command: npx vite --host 0.0.0.0
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend/src:/app/src:ro
-    environment:
-      VITE_API_URL: ""               # vacío: el proxy de vite.config.ts redirige /api al backend
-      BACKEND_URL: "http://backend:3001"   # target interno del proxy (ver nota abajo)
-
-  postgres:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: dryada
-      POSTGRES_PASSWORD: dryada_dev
-      POSTGRES_DB: cotizador
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dryada -d cotizador"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-volumes:
-  postgres_data:
+    image: ghcr.io/luchocassani/cotizador-dryada-frontend:latest
+    ports: ["80:80"]
+    env_file: frontend.env
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [interna]
 ```
 
-> **Nota sobre el proxy en docker-compose:** el proxy de `vite.config.ts` apunta a `http://localhost:3001`. Dentro del contenedor del frontend, `localhost` es el propio contenedor. Para resolver esto en docker-compose, actualizar `vite.config.ts` para leer el target del proxy desde una variable de entorno:
->
-> ```typescript
-> proxy: {
->   '/api': {
->     target: process.env.BACKEND_URL || 'http://localhost:3001',
->     changeOrigin: true,
->   },
-> },
-> ```
->
-> `BACKEND_URL` se setea en docker-compose; en desarrollo sin Docker sigue usando `localhost:3001`.
+CI genera una variante con los tags SHA reemplazando `:latest` antes de copiar al VM.
 
 ---
 
-## 4. Pipeline de CI/CD
+## 5. Variables de entorno
 
-### Archivo: `.github/workflows/deploy.yml`
+### Backend (`/opt/cotizador/backend.env`)
 
-**Trigger:** push a `main`.  
-**Filosofía:** si cualquier job falla, el deploy no corre. El orden es: typecheck → deploy.
-
-```yaml
-name: CI/CD — Cotizador Dryada
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]     # solo CI, sin deploy en PRs
-
-jobs:
-
-  # ── Typecheck ─────────────────────────────────────────────────
-  typecheck:
-    name: TypeScript check
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
-
-      - name: Install backend deps
-        run: npm ci
-        working-directory: backend
-
-      - name: Install frontend deps
-        run: npm ci
-        working-directory: frontend
-
-      - name: Typecheck backend
-        run: npx tsc --noEmit
-        working-directory: backend
-
-      - name: Typecheck frontend
-        run: npx tsc --noEmit
-        working-directory: frontend
-
-  # ── Tests unitarios ───────────────────────────────────────────
-  test:
-    name: Unit tests
-    runs-on: ubuntu-latest
-    needs: typecheck
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install backend deps
-        run: npm ci
-        working-directory: backend
-
-      - name: Run tests
-        run: npm test --if-present
-        working-directory: backend
-
-  # ── Deploy (solo en push a main, no en PRs) ──────────────────
-  deploy:
-    name: Deploy to Railway
-    runs-on: ubuntu-latest
-    needs: [typecheck, test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy backend
-        run: railway up --service backend --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-      - name: Deploy frontend
-        run: |
-          railway up --service frontend \
-            --build-arg VITE_API_URL=${{ vars.RAILWAY_BACKEND_URL }} \
-            --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-```
-
-**Secretos y variables de GitHub necesarios:**
-
-| Nombre | Tipo | Descripción |
+| Variable | Descripción | Ejemplo |
 |---|---|---|
-| `RAILWAY_TOKEN` | Secret | Token de Railway. Obtenerlo en Railway → Project Settings → Tokens. |
-| `RAILWAY_BACKEND_URL` | Variable (no secret) | URL pública del backend en Railway. Se usa como `VITE_API_URL` al buildear el frontend. Ejemplo: `https://cotizador-dryada-backend.up.railway.app` |
+| `PORT` | Puerto de Fastify | `3001` |
+| `DB_PATH` | Ruta al archivo SQLite | `/app/data/cotizador.db` |
+| `UPLOADS_DIR` | Directorio de STLs subidos | `/app/data/uploads` |
+| `PRUSASLICER_BIN` | Ruta al binario | `/usr/local/bin/prusa-slicer` |
+| `PRUSA_LAYER_HEIGHT` | Altura de capa por defecto | `0.2` |
+| `API_TOKEN` | Token Bearer de autenticación interna | `<hex 64 chars>` |
+| `FRONTEND_URL` | URL del frontend (para CORS) | `http://161.153.198.86` |
+| `UPLOAD_MAX_MB` | Límite de STL en MB | `500` |
 
-**Estrategia N1 vs N2:**
+### Frontend (`/opt/cotizador/frontend.env`)
 
-| Fase | Comportamiento del pipeline |
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `BACKEND_URL` | URL interna del backend (red Docker) | `http://backend:3001` |
+| `PORT` | Puerto en el que escucha nginx | `80` |
+| `API_TOKEN` | Token Bearer (mismo que backend) | `<hex 64 chars>` |
+
+### GitHub Secrets (repositorio)
+
+| Secret | Descripción |
 |---|---|
-| **N1** | Deploy directo. No hay migraciones. |
-| **N2** | Agregar un step antes del deploy del backend: `railway run --service backend -- npx prisma migrate deploy`. Esto corre las migraciones en el contenedor de producción antes de activar el nuevo código. |
-
-El step de migración en N2:
-
-```yaml
-      - name: Run database migrations (N2+)
-        run: railway run --service backend -- npx prisma migrate deploy
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        # Solo agregar este step cuando se active N2
-```
-
-**Qué pasa si un job falla:**
-- Si `typecheck` falla: `test` y `deploy` no corren.
-- Si `test` falla: `deploy` no corre.
-- Si `deploy` del backend falla: Railway mantiene la versión anterior activa (Railway hace rollback automático si el contenedor no pasa el healthcheck).
+| `ORACLE_SSH_KEY` | Clave privada SSH para acceder al VM |
+| `ORACLE_HOST` | IP del VM (`161.153.198.86`) |
+| `ORACLE_USER` | Usuario SSH (`ubuntu`) |
+| `ORACLE_KNOWN_HOSTS` | Fingerprint del host (anti-MITM, generado con `ssh-keyscan`) |
+| `API_TOKEN` | Token de autenticación backend↔frontend |
 
 ---
 
-## 5. Variables de entorno completas
+## 6. Pipeline de CI/CD
 
-### Backend
+### `.github/workflows/deploy.yml`
 
-| Variable | Descripción | N1 | N2 | Ejemplo |
-|---|---|---|---|---|
-| `PORT` | Puerto de Fastify. Railway lo inyecta automáticamente. | Automática | Automática | `3001` |
-| `SMTP_HOST` | Host del servidor SMTP. | ✅ | ✅ | `smtp.gmail.com` |
-| `SMTP_PORT` | Puerto SMTP. | ✅ | ✅ | `587` |
-| `SMTP_USER` | Email del remitente (cuenta Gmail). | ✅ | ✅ | `cotizador@dryada.com` |
-| `SMTP_PASS` | App Password de Gmail (16 chars). | ✅ | ✅ | `abcd efgh ijkl mnop` |
-| `EMAIL_FROM` | Nombre y dirección del remitente. | ✅ | ✅ | `"Cotizador Dryada <cotizador@dryada.com>"` |
-| `UPLOAD_MAX_MB` | Límite de tamaño de STL en MB. | ✅ | ✅ | `50` |
-| `DATABASE_URL` | Connection string PostgreSQL. Railway lo genera al vincular el servicio. | ❌ | ✅ | `postgresql://postgres:xxx@postgres.railway.internal:5432/railway` |
+**Trigger:** push a `main`.
+**Jobs:** `typecheck` → `test` → `deploy` (el deploy solo corre en push, no en PRs).
 
-### Frontend (build args — se hornean en el bundle)
+```
+typecheck (26s)
+    │
+    ▼
+test (12s)
+    │
+    ▼
+deploy (≈2m 54s)
+  1. docker login a GHCR
+  2. build + push backend (con GHA layer cache)
+  3. build + push frontend (con GHA layer cache)
+  4. sed: reemplaza :latest por :{sha} en compose
+  5. SSH setup (clave + known_hosts)
+  6. scp compose al VM
+  7. SSH: docker compose pull && up -d && image prune
+```
 
-| Variable | Descripción | N1 | N2 | Ejemplo |
-|---|---|---|---|---|
-| `VITE_API_URL` | URL base del backend. El frontend la usa para todas las llamadas a `/api`. | ✅ | ✅ | `https://cotizador-dryada-backend.up.railway.app` |
+**Cache de capas Docker:** `type=gha` con scopes separados por servicio. En pushs donde solo cambia el código (sin cambios en `package.json`), la capa de `npm ci` y compilación nativa de `better-sqlite3` se restaura del cache — reduce el build de backend de ~90s a ~20s.
 
-### GitHub Actions (Secrets y Variables del repositorio)
+### `.github/workflows/build-prusaslicer-base.yml`
 
-| Nombre | Tipo | Descripción |
-|---|---|---|
-| `RAILWAY_TOKEN` | Secret | Token de autenticación del Railway CLI. |
-| `RAILWAY_BACKEND_URL` | Variable | URL pública del backend, usada al buildear el frontend. |
+**Trigger:** `workflow_dispatch` manual.
+**Cuándo usarlo:** solo al actualizar la versión de PrusaSlicer. El workflow recibe un input `version` (semver), valida el formato, y publica en GHCR con tags `:{version}` y `:latest`.
 
 ---
 
-## 6. Checklist de deploy inicial (N1)
+## 7. Rollback
 
-Pasos en orden. Cada uno debe completarse antes del siguiente.
+No hay rollback automático (Oracle Cloud no es una PaaS). Para volver a una versión anterior:
 
-### Paso 1 — Crear el proyecto en Railway
+```bash
+ssh -i ~/.ssh/deploy_key ubuntu@161.153.198.86
+# Ver imágenes disponibles en el VM
+docker images ghcr.io/luchocassani/cotizador-dryada-backend
 
-1. Crear cuenta en [railway.app](https://railway.app) (plan Hobby: $5/mes).
-2. Crear nuevo proyecto: **New Project → Empty Project**.
-3. Nombrar el proyecto: `cotizador-dryada`.
+# Editar el compose para apuntar al SHA anterior
+nano /opt/cotizador/docker-compose.prod.yml
 
-### Paso 2 — Crear el servicio backend
-
-1. En el proyecto: **New Service → GitHub Repo**.
-2. Conectar el repositorio `LuchoCassani/cotizador-dryada`.
-3. Configurar el servicio:
-   - **Root Directory**: `backend`
-   - **Build Command**: *(vacío, Railway detecta el Dockerfile)*
-   - **Start Command**: *(vacío, lo lee del Dockerfile)*
-4. En **Settings → Networking**: generar un dominio público.
-5. Copiar la URL generada (la necesitás en el Paso 4).
-
-### Paso 3 — Crear el servicio frontend
-
-1. En el proyecto: **New Service → GitHub Repo** (mismo repositorio).
-2. Configurar el servicio:
-   - **Root Directory**: `frontend`
-3. En **Settings → Networking**: generar un dominio público.
-
-### Paso 4 — Configurar variables de entorno
-
-**En el servicio backend** (Railway → backend → Variables):
-
-```
-SMTP_HOST       = smtp.gmail.com
-SMTP_PORT       = 587
-SMTP_USER       = <email real>
-SMTP_PASS       = <app password real>
-EMAIL_FROM      = "Cotizador Dryada <cotizador@dryada.com>"
-UPLOAD_MAX_MB   = 50
+# Aplicar
+docker compose -f /opt/cotizador/docker-compose.prod.yml up -d
 ```
 
-**En el servicio frontend** (Railway → frontend → Variables):
-
-```
-VITE_API_URL    = <URL del backend copiada en el Paso 2>
-```
-
-### Paso 5 — Configurar GitHub Actions
-
-1. En el repositorio GitHub: **Settings → Secrets and variables → Actions**.
-2. Crear Secret: `RAILWAY_TOKEN`
-   - Obtenerlo en Railway → Project Settings → Tokens → New Token.
-3. Crear Variable (no secret): `RAILWAY_BACKEND_URL`
-   - Valor: la URL pública del backend de Railway.
-4. Hacer un push a `main` para disparar el primer deploy.
-
-### Paso 6 — Verificar el deploy
-
-1. En Railway, verificar que ambos servicios muestran **Active** (no **Failed**).
-2. Abrir la URL del frontend en el browser.
-3. Hacer una request manual a `https://<RAILWAY_BACKEND_DOMAIN>/api/materials`.
-   - Respuesta esperada: array de materiales del `prices.json`.
-4. Subir un STL de prueba desde la UI.
-
-### Paso 7 — Rollback si algo sale mal
-
-Railway mantiene el historial de deploys por servicio:
-
-1. Railway → servicio afectado → **Deployments**.
-2. Seleccionar el deploy anterior (el que estaba funcionando).
-3. Click en **Rollback** → el servicio vuelve a esa versión en ~30 segundos.
-
-El rollback **no revierte variables de entorno** — si el problema fue una variable mal configurada, hay que corregirla manualmente.
+Las imágenes de deploys anteriores quedan en el VM hasta que `docker image prune -f` las elimine (el prune corre automáticamente al final de cada deploy, pero solo elimina imágenes sin contenedor activo).
 
 ---
 
-## 7. Decisiones de diseño y trade-offs
+## 8. Decisiones de diseño
 
-### Por qué Railway sobre VPS propio o AWS
+### Por qué Oracle Cloud Always Free vs Railway
 
-Un VPS propio (DigitalOcean, Hetzner) es más barato por hora, pero tiene costo operativo oculto: configurar nginx, SSL, systemd, backups, monitoreo, y actualizaciones de seguridad. Para una herramienta interna con un equipo pequeño, ese overhead no se justifica.
+Railway se agotó en los primeros días de desarrollo activo ($5 de crédito incluido). Oracle Cloud Always Free ofrece VM.Standard.E2.1.Micro sin límite de tiempo ni de uso, genuinamente gratis. El trade-off es mayor complejidad operativa (gestión de SSH, firewall, updates de OS), pero aceptable para una herramienta interna.
 
-AWS es potente pero sobre-engineered para este caso. ECS, ECR, RDS, ALB, y Route 53 para una herramienta interna es costoso en tiempo de configuración y en dinero (la capa gratuita de RDS dura 12 meses).
+### Por qué imagen base para PrusaSlicer
 
-Railway ofrece el equilibrio correcto: deploy desde GitHub en minutos, SSL automático, PostgreSQL nativo, y variables de entorno en el dashboard. El costo en el plan Hobby es ~$5–15/mes dependiendo del uso, predecible y menor que cualquier alternativa equivalente en tiempo de setup.
+La extracción del AppImage de PrusaSlicer tarda ~5 minutos en CI. Con una imagen base publicada en GHCR, ese tiempo se paga una sola vez (al publicar la imagen base), y cada deploy del backend lo salta completamente. Documentado en ADR-007.
 
-**Riesgo**: Railway es una plataforma joven. Si Railway desaparece o cambia su modelo de negocio, la migración es directa porque todo está en Docker: los mismos `Dockerfile` funcionan en Fly.io, Render, o un VPS.
+### Por qué nginx proxea al backend (no llamadas directas desde el browser)
 
-### Por qué nginx para el frontend
+El API_TOKEN no puede estar en el bundle del frontend (sería visible en el código fuente). nginx inyecta el token en el header `Authorization` de cada request a `/api/` en el servidor, invisible para el browser. Además, desde el exterior solo el puerto 80 está expuesto — el backend nunca tiene un puerto público.
 
-`vite preview` es un servidor de desarrollo post-build. No está diseñado para producción: no tiene control de caché, no comprime con gzip, y no tiene soporte para configuración de headers de seguridad. Para una SPA en producción, nginx es el estándar de facto.
+### Por qué SQLite y no PostgreSQL
 
-La configuración de nginx en este proyecto hace tres cosas críticas:
-1. **SPA fallback** (`try_files $uri /index.html`): sin esto, recargar la página en cualquier ruta que no sea `/` devuelve 404.
-2. **Caché agresiva para assets**: Vite genera nombres de archivo con hash de contenido (`main.abc123.js`). Estos archivos pueden cachearse 1 año en el browser sin riesgo de servir versiones viejas.
-3. **Compresión gzip**: reduce el payload de los assets entre 60–80%.
-
-### Por qué multi-stage build
-
-Sin multi-stage, la imagen del backend incluiría TypeScript, tsx, y todos los `devDependencies`. Esto significa:
-
-- Imagen más grande (~350MB vs ~120MB): más tiempo de push/pull en CI y más almacenamiento en Railway.
-- Surface de ataque mayor: dependencias de desarrollo (linters, compiladores) no deberían estar en producción.
-
-El multi-stage garantiza que la imagen de runtime solo contiene lo mínimo necesario para ejecutar la aplicación.
-
-### Riesgos operativos
-
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|---|---|---|---|
-| Railway supera el límite del plan Hobby | Baja (uso interno bajo) | Medio | Monitorear el uso en el dashboard. Si se supera, upgradar a Pro ($20/mes). |
-| El free tier de Railway cambia | Media | Alto | Todo está en Docker. Migración a Fly.io o Render en < 1 día. |
-| `RAILWAY_TOKEN` comprometido | Baja | Alto | Rotar el token desde Railway dashboard. El token tiene scope de proyecto, no de cuenta. |
-| Deploy fallido sin rollback automático | Baja | Alto | Railway hace rollback automático si el healthcheck falla. Configurar healthcheck en Fastify (ver más abajo). |
-| Pérdida de uploads en `/tmp` por restart | Media | Bajo | Comportamiento documentado y esperado. El usuario recibe un error claro. |
-
-**Healthcheck recomendado para el backend** (agregar en `server.ts`):
-
-```typescript
-app.get('/health', async () => ({ status: 'ok' }));
-```
-
-Railway puede usar este endpoint para validar que el deploy fue exitoso antes de redirigir el tráfico.
+Para el volumen de uso interno de Dryada (pocas cotizaciones por día, un solo usuario a la vez), SQLite es suficiente. Elimina la necesidad de un servicio de base de datos separado, su backup es un `cp` de un archivo, y su operación es cero configuración. Si el volumen crece, la migración está documentada en el CLAUDE.md.
 
 ---
 
-## Próximos pasos
+## 9. Checklist de setup inicial (para nuevo VM)
 
-Tareas concretas a agregar en `tasks.json` como nueva fase `F5 — Infraestructura`:
+En caso de necesitar recrear el VM desde cero:
 
-| ID | Tarea | Dependencias |
-|---|---|---|
-| F5-T1 | Crear `backend/Dockerfile` multi-stage | F1 completa |
-| F5-T2 | Crear `frontend/Dockerfile` + `frontend/nginx.conf` | F3-T1 |
-| F5-T3 | Crear `docker-compose.yml` raíz con hot reload | F5-T1, F5-T2 |
-| F5-T4 | Crear `.dockerignore` en backend y frontend | F5-T1, F5-T2 |
-| F5-T5 | Actualizar `vite.config.ts` para leer `BACKEND_URL` de env | F5-T3 |
-| F5-T6 | Crear `.github/workflows/deploy.yml` | F5-T1, F5-T2 |
-| F5-T7 | Crear proyecto en Railway y configurar servicios N1 | F5-T1, F5-T2 |
-| F5-T8 | Configurar secretos en GitHub (`RAILWAY_TOKEN`, `RAILWAY_BACKEND_URL`) | F5-T7 |
-| F5-T9 | Verificar primer deploy exitoso (checklist sección 6) | F5-T7, F5-T8 |
-| F5-T10 | Agregar endpoint `/health` en el backend | F1 completa |
+1. Crear VM `VM.Standard.E2.1.Micro` en Oracle Cloud con VCN que tenga internet gateway.
+2. Abrir puertos 22 y 80 en la Oracle Security List del VCN.
+3. SSH al VM, ejecutar `sudo apt update && sudo apt install -y docker.io docker-compose-v2`.
+4. `sudo mkdir -p /opt/cotizador/data && sudo chown ubuntu:ubuntu /opt/cotizador`.
+5. Crear `/opt/cotizador/backend.env` y `/opt/cotizador/frontend.env` con los valores de la sección 5.
+6. Abrir puertos en iptables: `sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT`.
+7. Actualizar el secret `ORACLE_HOST` en GitHub con la nueva IP.
+8. Regenerar `ORACLE_KNOWN_HOSTS` con `ssh-keyscan <nueva-ip>` y actualizar el secret.
+9. Hacer un push a `main` para disparar el primer deploy.
 
 ---
 
-*Fin del documento Infra/Deploy SDD v1.0 — Cotizador Dryada*
+*Fin del documento Infra/Deploy SDD v2.0 — Cotizador Dryada*

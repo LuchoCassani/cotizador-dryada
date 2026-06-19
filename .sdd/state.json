@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "project": "cotizador-dryada",
   "initialized_at": "2026-06-13T00:00:00Z",
-  "active_feature": "prusaslicer-base-image",
+  "active_feature": null,
   "last_session_notes": null,
   "last_session_end": null,
   "coaching_profile": {
@@ -18,7 +18,7 @@
     "security": { "scaffolded": 0, "unscaffolded": 2 },
     "configurability": { "scaffolded": 1, "unscaffolded": 1 }
   },
-  "completed_features": 5,
+  "completed_features": 7,
   "milestones": {
     "adr_explained": true,
     "orphan_code_explained": false,
@@ -243,7 +243,7 @@
       }
     },
     "prusaslicer-base-image": {
-      "state": "implementing",
+      "state": "completed",
       "spec_path": "specs/prusaslicer-base-image/spec.md",
       "plan_path": "specs/prusaslicer-base-image/plan.md",
       "tasks_path": "specs/prusaslicer-base-image/tasks.md",
@@ -278,17 +278,23 @@
           "to": "implementing",
           "at": "2026-06-19T00:00:00Z",
           "command": "sdd-implement"
+        },
+        {
+          "from": "implementing",
+          "to": "completed",
+          "at": "2026-06-19T17:11:00Z",
+          "command": "sdd-validate"
         }
       ],
       "tasks": {
         "TASK-001": { "status": "completed", "title": "Crear docker/Dockerfile.prusaslicer", "completed_at": "2026-06-19T00:00:00Z" },
         "TASK-002": { "status": "completed", "title": "Crear .github/workflows/build-prusaslicer-base.yml", "completed_at": "2026-06-19T00:00:00Z" },
         "TASK-003": { "status": "completed", "title": "Actualizar etapa runtime de backend/Dockerfile", "completed_at": "2026-06-19T00:00:00Z" },
-        "TASK-004": { "status": "pending", "title": "Publicar imagen base en GHCR y verificar deploy del backend" }
+        "TASK-004": { "status": "completed", "title": "Publicar imagen base en GHCR y verificar deploy del backend", "completed_at": "2026-06-19T17:11:00Z" }
       }
     },
     "docker-railway-deploy": {
-      "state": "implementing",
+      "state": "completed",
       "spec_path": "specs/docker-railway-deploy/spec.md",
       "plan_path": "specs/docker-railway-deploy/plan.md",
       "tasks_path": "specs/docker-railway-deploy/tasks.md",
@@ -332,7 +338,7 @@
         "TASK-004": { "status": "completed", "title": "Verificar endpoint GET /health en backend/src/server.ts", "completed_at": "2026-06-15T00:05:00Z" },
         "TASK-005": { "status": "completed", "title": "Verificar archivos de frontend contra spec", "completed_at": "2026-06-15T00:05:00Z" },
         "TASK-006": { "status": "completed", "title": "Verificar .github/workflows/deploy.yml contra spec", "completed_at": "2026-06-15T00:05:00Z" },
-        "TASK-007": { "status": "pending", "title": "Setup Railway y primer deploy" }
+        "TASK-007": { "status": "completed", "title": "Setup Oracle Cloud y primer deploy", "completed_at": "2026-06-19T17:11:00Z" }
       }
     },
     "sqlite-data-model": {

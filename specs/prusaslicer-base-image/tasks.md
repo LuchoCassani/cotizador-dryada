@@ -56,7 +56,7 @@ En `backend/Dockerfile`, reemplazar la etapa `runtime` completa. La línea `FROM
 
 ## TASK-004: Publicar imagen base en GHCR y verificar deploy del backend
 
-**Status**: pending
+**Status**: completed
 **Requirements**: NFR-001, NFR-003, EC-001, EC-002, EC-003, EC-004
 **Complexity**: S
 **Depends on**: TASK-001, TASK-002, TASK-003
