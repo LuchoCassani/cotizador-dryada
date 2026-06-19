@@ -1,0 +1,25 @@
+services:
+
+  backend:
+    image: ghcr.io/luchocassani/cotizador-dryada-backend:latest
+    volumes:
+      - /opt/cotizador/data:/app/data
+    env_file: .env
+    restart: unless-stopped
+    networks:
+      - interna
+
+  frontend:
+    image: ghcr.io/luchocassani/cotizador-dryada-frontend:latest
+    ports:
+      - "80:80"
+    env_file: .env
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - interna
+
+networks:
+  interna:
+    driver: bridge

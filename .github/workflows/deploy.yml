@@ -62,26 +62,64 @@ jobs:
         working-directory: backend
 
   deploy:
-    name: Deploy to Railway
+    name: Deploy to Oracle Cloud
     runs-on: ubuntu-latest
     needs: [typecheck, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy backend
-        run: railway up --service backend --detach
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/luchocassani/cotizador-dryada-backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            VITE_API_URL=
+            VITE_API_TOKEN=
+          tags: ghcr.io/luchocassani/cotizador-dryada-frontend:latest
+
+      - name: Setup SSH key
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          echo "$ORACLE_SSH_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
 
-      - name: Deploy frontend
-        run: railway up --service frontend --detach
+      - name: Copy compose file to VM
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          scp -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            docker-compose.prod.yml \
+            "${ORACLE_USER}@${ORACLE_HOST}:/opt/cotizador/docker-compose.prod.yml"
 
-      # BACKEND_URL y API_TOKEN se configuran como variables en el servicio frontend de Railway
-      # nginx los inyecta en runtime via envsubst — no se necesitan build args
+      - name: Deploy on VM
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key \
+            "${ORACLE_USER}@${ORACLE_HOST}" \
+            'docker compose -f /opt/cotizador/docker-compose.prod.yml pull && docker compose -f /opt/cotizador/docker-compose.prod.yml up -d && docker image prune -f'
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f /tmp/deploy_key
