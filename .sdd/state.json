@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "project": "cotizador-dryada",
   "initialized_at": "2026-06-13T00:00:00Z",
-  "active_feature": null,
+  "active_feature": "admin-panel",
   "last_session_notes": null,
   "last_session_end": null,
   "coaching_profile": {
@@ -391,6 +391,65 @@
         "TASK-015": { "status": "completed", "title": "Tests para SqliteMaterialsRepository", "completed_at": "2026-06-13T15:30:00Z" },
         "TASK-016": { "status": "completed", "title": "Tests para SqliteGlobalParamsRepository", "completed_at": "2026-06-13T15:30:00Z" },
         "TASK-017": { "status": "completed", "title": "Actualizar app.ts con repos SQLite y adapter IPricesRepository", "completed_at": "2026-06-13T15:31:00Z" }
+      }
+    },
+    "admin-panel": {
+      "state": "implementing",
+      "spec_path": "specs/admin-panel/spec.md",
+      "plan_path": "specs/admin-panel/plan.md",
+      "tasks_path": "specs/admin-panel/tasks.md",
+      "prd_reference": null,
+      "transitions": [
+        {
+          "from": "drafting",
+          "to": "specified",
+          "at": "2026-06-19T17:30:00Z",
+          "command": "sdd-specify"
+        },
+        {
+          "from": "specified",
+          "to": "clarified",
+          "at": "2026-06-19T18:00:00Z",
+          "command": "sdd-clarify"
+        },
+        {
+          "from": "clarified",
+          "to": "planned",
+          "at": "2026-06-19T18:30:00Z",
+          "command": "sdd-plan"
+        },
+        {
+          "from": "planned",
+          "to": "tasked",
+          "at": "2026-06-19T19:00:00Z",
+          "command": "sdd-tasks"
+        },
+        {
+          "from": "tasked",
+          "to": "implementing",
+          "at": "2026-06-19T19:30:00Z",
+          "command": "sdd-implement"
+        }
+      ],
+      "tasks": {
+        "TASK-001": { "status": "completed", "title": "Crear AdminSessionService", "completed_at": "2026-06-19T19:30:00Z" },
+        "TASK-002": { "status": "completed", "title": "Agregar tipos de admin al frontend", "completed_at": "2026-06-19T19:30:00Z" },
+        "TASK-003": { "status": "pending", "title": "Crear admin.route.ts con endpoint de login" },
+        "TASK-004": { "status": "pending", "title": "Agregar rutas CRUD de materiales a admin.route.ts" },
+        "TASK-005": { "status": "pending", "title": "Agregar rutas CRUD de máquinas a admin.route.ts" },
+        "TASK-006": { "status": "pending", "title": "Agregar rutas de parámetros globales a admin.route.ts" },
+        "TASK-007": { "status": "pending", "title": "Registrar adminRoute en app.ts y server.ts" },
+        "TASK-008": { "status": "pending", "title": "Tests unitarios de AdminSessionService" },
+        "TASK-009": { "status": "pending", "title": "Tests de integración de rutas admin" },
+        "TASK-010": { "status": "pending", "title": "Agregar funciones admin a api.ts del frontend" },
+        "TASK-011": { "status": "pending", "title": "Crear pantalla AdminLogin" },
+        "TASK-012": { "status": "pending", "title": "Crear MaterialModal" },
+        "TASK-013": { "status": "pending", "title": "Crear MaquinaModal" },
+        "TASK-014": { "status": "pending", "title": "Crear TabMateriales" },
+        "TASK-015": { "status": "pending", "title": "Crear TabMaquinas" },
+        "TASK-016": { "status": "pending", "title": "Crear TabParametros" },
+        "TASK-017": { "status": "pending", "title": "Crear PanelAdmin" },
+        "TASK-018": { "status": "pending", "title": "Integrar panel admin en App.tsx y Topbar" }
       }
     }
   },

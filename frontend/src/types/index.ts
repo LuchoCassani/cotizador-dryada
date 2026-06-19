@@ -58,3 +58,42 @@ export interface ApiError {
   error: string
   code: string
 }
+
+export interface MaterialAdmin {
+  id: string
+  nombre: string
+  precioPorCartucho750gEUR: number
+  densidadGCm3: number
+  activo: boolean
+  creadaAt: string
+  actualizadaAt: string
+}
+
+export interface MaquinaAdmin {
+  id: string
+  nombre: string
+  capacidadXmm: number
+  capacidadYmm: number
+  capacidadZmm: number
+  costoUsd: number
+  mesesAmortizacion: number
+  activa: boolean
+  creadaAt: string
+}
+
+export interface ParametrosGlobales {
+  tasaEurUsd: number
+  tasaArsUsd: number
+  tarifaManoObraUsdHora: number
+  horasPorPieza: number
+  desperdicioPct: number
+  costosAdicionalesUsd: number
+  coeficienteGanancia: number
+  piezasPorDiaEstimadas: number
+  actualizadaAt?: string
+}
+
+export interface AdminSession {
+  token: string
+  expiresAt: string
+}
