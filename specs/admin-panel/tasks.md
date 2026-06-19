@@ -104,7 +104,7 @@ Agregar las 2 rutas de parámetros globales al plugin `adminRoute`. `GET /api/ad
 
 ## TASK-007: Registrar adminRoute en app.ts y server.ts
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001
 **Complexity**: S
 **Depends on**: TASK-004, TASK-005, TASK-006
@@ -184,7 +184,7 @@ El componente existe y renderiza sin errores. Con contraseña correcta (mockeada
 
 ## TASK-012: Crear MaterialModal
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-003, CA-004, CA-008
 **Complexity**: M
 **Depends on**: TASK-010
@@ -200,7 +200,7 @@ El modal renderiza en modo creación (campos vacíos) y edición (campos prellen
 
 ## TASK-013: Crear MaquinaModal
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-006, CA-008
 **Complexity**: M
 **Depends on**: TASK-010
@@ -248,7 +248,7 @@ La tabla carga máquinas. La columna capacidad muestra el formato "X×Y×Z mm". 
 
 ## TASK-016: Crear TabParametros
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-007, CA-008
 **Complexity**: M
 **Depends on**: TASK-010

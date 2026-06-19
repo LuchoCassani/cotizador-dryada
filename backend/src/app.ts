@@ -41,6 +41,10 @@ export const machinesRepo  = new SqliteMachinesRepository(db);
 export const materialsRepo = new SqliteMaterialsRepository(db);
 export const paramsRepo    = new SqliteGlobalParamsRepository(db);
 
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('[startup] ADMIN_PASSWORD no configurada — panel de admin deshabilitado');
+}
+
 const pricesAdapter: IPricesRepository = {
   getMateriales: async () => {
     const [all, params] = await Promise.all([materialsRepo.getAll(), paramsRepo.get()]);
