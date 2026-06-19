@@ -243,7 +243,7 @@
       }
     },
     "prusaslicer-base-image": {
-      "state": "tasked",
+      "state": "implementing",
       "spec_path": "specs/prusaslicer-base-image/spec.md",
       "plan_path": "specs/prusaslicer-base-image/plan.md",
       "tasks_path": "specs/prusaslicer-base-image/tasks.md",
@@ -272,12 +272,18 @@
           "to": "tasked",
           "at": "2026-06-15T01:00:00Z",
           "command": "sdd-tasks"
+        },
+        {
+          "from": "tasked",
+          "to": "implementing",
+          "at": "2026-06-19T00:00:00Z",
+          "command": "sdd-implement"
         }
       ],
       "tasks": {
-        "TASK-001": { "status": "pending", "title": "Crear docker/Dockerfile.prusaslicer" },
-        "TASK-002": { "status": "pending", "title": "Crear .github/workflows/build-prusaslicer-base.yml" },
-        "TASK-003": { "status": "pending", "title": "Actualizar etapa runtime de backend/Dockerfile" },
+        "TASK-001": { "status": "completed", "title": "Crear docker/Dockerfile.prusaslicer", "completed_at": "2026-06-19T00:00:00Z" },
+        "TASK-002": { "status": "completed", "title": "Crear .github/workflows/build-prusaslicer-base.yml", "completed_at": "2026-06-19T00:00:00Z" },
+        "TASK-003": { "status": "completed", "title": "Actualizar etapa runtime de backend/Dockerfile", "completed_at": "2026-06-19T00:00:00Z" },
         "TASK-004": { "status": "pending", "title": "Publicar imagen base en GHCR y verificar deploy del backend" }
       }
     },

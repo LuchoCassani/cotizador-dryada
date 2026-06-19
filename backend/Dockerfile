@@ -23,27 +23,13 @@ RUN curl -sL -o /tmp/PrusaSlicer.AppImage \
     && rm -rf /tmp/PrusaSlicer.AppImage /tmp/squashfs-root
 
 # ── Etapa 2: runtime ──────────────────────────────────────────
-FROM node:20-bookworm-slim AS runtime
+FROM ghcr.io/luchocassani/dryada-prusaslicer-base:latest AS runtime
 
 WORKDIR /app
-
-# Dependencias de sistema requeridas por PrusaSlicer en runtime.
-# libwebkit2gtk-4.1-0 es requerida — el binario la enlaza dinámicamente, no viene bundled.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      libglib2.0-0 libgl1 libgtk-3-0 libgdk-pixbuf2.0-0 \
-      libatk1.0-0 libcairo2 libpango-1.0-0 libpangocairo-1.0-0 \
-      libharfbuzz0b libfontconfig1 libfreetype6 libx11-6 \
-      libwebkit2gtk-4.1-0 \
-    && rm -rf /var/lib/apt/lists/*
 
 # node_modules copiado del build stage — incluye el binario nativo de better-sqlite3
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /opt/prusaslicer /opt/prusaslicer
-
-RUN ln -s /opt/prusaslicer/bin/prusa-slicer /usr/local/bin/prusa-slicer
-
-ENV LD_LIBRARY_PATH=/opt/prusaslicer/lib
 
 RUN mkdir -p /app/data
 

@@ -8,7 +8,7 @@
 
 ## TASK-001: Crear docker/Dockerfile.prusaslicer
 
-**Status**: pending
+**Status**: completed
 **Requirements**: FR-001, FR-006, NFR-002, C-1, C-2
 **Complexity**: M
 **Depends on**: none
@@ -24,7 +24,7 @@ Crear el directorio `docker/` y el archivo `docker/Dockerfile.prusaslicer` con d
 
 ## TASK-002: Crear .github/workflows/build-prusaslicer-base.yml
 
-**Status**: pending
+**Status**: completed
 **Requirements**: FR-002, FR-003, NFR-002, NFR-003, EC-002, EC-003
 **Complexity**: S
 **Depends on**: none
@@ -40,7 +40,7 @@ El archivo existe con la estructura correcta. Al triggerlearlo manualmente desde
 
 ## TASK-003: Actualizar etapa runtime de backend/Dockerfile
 
-**Status**: pending
+**Status**: completed
 **Requirements**: FR-004, FR-005, NFR-001, EC-001, EC-004
 **Complexity**: S
 **Depends on**: none
