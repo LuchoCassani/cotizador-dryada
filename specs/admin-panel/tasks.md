@@ -136,7 +136,7 @@ Escribir tests con vitest para `AdminSessionService`. Casos a cubrir: `createSes
 
 ## TASK-009: Tests de integración de rutas admin
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-001, CA-002, CA-003, CA-004, CA-005, CA-006, CA-007, CA-008, C-1, C-3, C-4
 **Complexity**: M
 **Depends on**: TASK-007, TASK-008
@@ -216,7 +216,7 @@ El modal renderiza en modo creación y edición. Campos de dimensiones aceptan s
 
 ## TASK-014: Crear TabMateriales
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-002, CA-003, CA-004, CA-005, C-2
 **Complexity**: M
 **Depends on**: TASK-012
@@ -232,7 +232,7 @@ La tabla carga materiales al montar. El toggle activo/inactivo actualiza el badg
 
 ## TASK-015: Crear TabMaquinas
 
-**Status**: pending
+**Status**: completed
 **Requirements**: CA-006, C-2
 **Complexity**: M
 **Depends on**: TASK-013
