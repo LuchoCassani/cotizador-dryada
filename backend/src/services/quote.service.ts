@@ -20,6 +20,7 @@ export interface CotizacionInput {
   cantidad: number;
   empleadoId: string;
   observaciones?: string;
+  signal?: AbortSignal;
 }
 
 export interface CotizacionResult {
@@ -77,7 +78,7 @@ export class QuoteService {
 
     if (stlExists) {
       try {
-        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad);
+        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, input.signal);
         gramosTotal = sliced.gramosTotal * (1 + params.desperdicioPct);
         weightSource = 'prusaslicer';
       } catch (err) {
