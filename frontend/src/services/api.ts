@@ -62,6 +62,17 @@ export async function sendEmail(quoteId: string, destinatario: string, pdfBase64
   return handleResponse<void>(res)
 }
 
+// --- Auth cotizador ---
+
+export async function cotizadorLogin(password: string): Promise<{ token: string }> {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ password }),
+  })
+  return handleResponse<{ token: string }>(res)
+}
+
 // --- Admin ---
 
 function adminHeaders(): Record<string, string> {

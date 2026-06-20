@@ -160,7 +160,16 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
             {result.material.nombre} · {result.cantidad} {result.cantidad === 1 ? 'unidad' : 'unidades'}
           </p>
         </div>
-        <BadgeComplejidad complejidad={result.complejidad} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium ${
+            result.weightSource === 'prusaslicer'
+              ? 'bg-[#ECFDF5] text-[#065F46]'
+              : 'bg-dryada-gray-50 text-dryada-gray-400'
+          }`}>
+            {result.weightSource === 'prusaslicer' ? 'PrusaSlicer' : 'Estimación geométrica'}
+          </span>
+          <BadgeComplejidad complejidad={result.complejidad} />
+        </div>
       </div>
 
       {/* Métricas */}

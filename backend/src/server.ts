@@ -8,6 +8,7 @@ import { machinesRoute } from './routes/machines.route';
 import { quoteRoute } from './routes/quote.route';
 import { emailRoute } from './routes/email.route';
 import { adminRoute } from './routes/admin.route';
+import { authRoute } from './routes/auth.route';
 
 const PORT = parseInt(process.env.PORT ?? '3001');
 const UPLOAD_MAX_BYTES = parseInt(process.env.UPLOAD_MAX_MB ?? '50') * 1024 * 1024;
@@ -48,6 +49,7 @@ async function start() {
   await app.register(machinesRoute);
   await app.register(quoteRoute);
   await app.register(emailRoute);
+  await app.register(authRoute);
   await app.register(adminRoute);
 
   app.get('/health', async () => ({ status: 'ok' }));
