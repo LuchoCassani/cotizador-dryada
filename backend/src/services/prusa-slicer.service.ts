@@ -26,6 +26,7 @@ export class PrusaSlicerService implements IPrusaSlicerService {
       '--nozzle-diameter', '0.40',
       '--layer-height', this.layerHeight,
       '--filament-density', String(densidad),
+      '--threads', '1',
       '--export-gcode',
       '--output', gcodePath,
       stlPath,
