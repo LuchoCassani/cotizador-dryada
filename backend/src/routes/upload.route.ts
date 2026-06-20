@@ -53,6 +53,10 @@ export const uploadRoute: FastifyPluginAsync = async (fastify) => {
     }
 
     uploadCache.set(analysis.uploadId, analysis);
+
+    const stlPath = path.join(process.env.UPLOADS_DIR ?? '/tmp/cotizador-uploads', `${analysis.uploadId}.stl`);
+    await fs.writeFile(stlPath, buffer);
+
     programarLimpieza(analysis.uploadId);
 
     return reply.send({
