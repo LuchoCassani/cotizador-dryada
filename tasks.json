@@ -434,38 +434,38 @@
         },
         {
           "id": "F5-T7",
-          "titulo": "Crear proyecto Railway y configurar servicios N1",
-          "descripcion": "Crear proyecto 'cotizador-dryada' en Railway. Crear servicio backend (root: backend/) y frontend (root: frontend/). Configurar variables de entorno SMTP y VITE_API_URL. Generar dominios públicos.",
-          "estado": "pending",
+          "titulo": "Configurar servidor Oracle Cloud y deploy inicial",
+          "descripcion": "Deploy en Oracle Cloud (ARM64 NanoPi-compatible). Servidor configurado con Docker, variables de entorno SMTP, VITE_API_URL y API_TOKEN. Dominios públicos operativos.",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": [
             "F5-T1",
             "F5-T2"
           ],
-          "criterio_done": "Ambos servicios en estado Active en Railway. GET /api/materials desde la URL pública retorna materiales."
+          "criterio_done": "Ambos servicios activos en Oracle Cloud. GET /api/materials desde la URL pública retorna materiales."
         },
         {
           "id": "F5-T8",
-          "titulo": "Configurar secretos en GitHub",
-          "descripcion": "Crear Secret RAILWAY_TOKEN y Variable RAILWAY_BACKEND_URL en GitHub → Settings → Secrets and variables → Actions.",
-          "estado": "pending",
+          "titulo": "Configurar secretos en GitHub Actions",
+          "descripcion": "Secrets configurados en GitHub → Settings → Secrets and variables → Actions para el pipeline CI/CD con Oracle Cloud.",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": [
             "F5-T7"
           ],
-          "criterio_done": "El workflow de GitHub Actions puede autenticarse con Railway sin errores de token."
+          "criterio_done": "El workflow de GitHub Actions puede autenticarse y hacer deploy al servidor sin errores."
         },
         {
           "id": "F5-T9",
           "titulo": "Verificar primer deploy exitoso",
-          "descripcion": "Seguir el checklist de la sección 6 de specs/infra-deploy-sdd.md. Subir un STL de prueba desde la URL pública. Verificar que el email de cotización llega.",
-          "estado": "pending",
+          "descripcion": "Deploy en Oracle Cloud verificado. Flujo completo end-to-end operativo desde la URL pública.",
+          "estado": "completed",
           "prioridad": "critica",
           "dependencias": [
             "F5-T7",
             "F5-T8"
           ],
-          "criterio_done": "Flujo completo end-to-end desde la URL pública de Railway: upload STL → cotización → PDF → email."
+          "criterio_done": "Flujo completo end-to-end desde la URL pública: upload STL → cotización → PDF → email."
         },
         {
           "id": "F5-T10",
@@ -569,9 +569,9 @@
         },
         {
           "id": "F6-T8",
-          "titulo": "Configurar API_TOKEN en Railway y GitHub",
-          "descripcion": "Generar token con 'openssl rand -hex 32'. Setearlo como API_TOKEN en Railway → backend → Variables y como Secret API_TOKEN en GitHub Actions (para el build-arg del frontend).",
-          "estado": "pending",
+          "titulo": "Configurar API_TOKEN en Oracle Cloud y GitHub",
+          "descripcion": "API_TOKEN generado y configurado en Oracle Cloud (variables de entorno del servidor) y como Secret en GitHub Actions. Bearer token operativo en producción.",
+          "estado": "completed",
           "prioridad": "alta",
           "dependencias": [
             "F6-T2",
@@ -618,17 +618,17 @@
       "titulo": "Sin autenticación ni rate limiting",
       "estado": "resuelto",
       "descripcion": "Resuelto en F6: rate limiting global + por endpoint (@fastify/rate-limit), Bearer token estático (API_TOKEN env), límites de payload en schemas, DoS protection en parser STL, límite de uploadCache, security headers en nginx. Ver specs/security-sdd.md.",
-      "accion_pendiente": "F6-T8: configurar API_TOKEN en Railway y GitHub antes del primer deploy.",
+      "accion_pendiente": "Ninguna. API_TOKEN configurado en Oracle Cloud y GitHub Actions.",
       "prioridad": "alta",
       "bloquea_deploy": false
     }
   ],
   "metricas": {
     "total_tareas": 47,
-    "completadas": 37,
+    "completadas": 41,
     "en_progreso": 0,
-    "pendientes": 10,
-    "ultimo_commit": "2026-05-12",
-    "nota": "Backend F1+F2 completo. Frontend F3 completo. Infra F5 (7/10 en código). Seguridad F6 (7/8 — F6-T8 requiere configuración en Railway/GitHub). Pendiente: F4 calibración física, F5-T7/T8/T9 y F6-T8 deploy real, F1-T9 precios reales."
+    "pendientes": 6,
+    "ultimo_commit": "2026-06-19",
+    "nota": "Todo el código completo. Deploy en Oracle Cloud operativo. Secretos y API_TOKEN configurados. Pendiente: F4 calibración física (F4-T1 a T5) y actualizar prices.json con precios reales (AA-3, bloquea apertura a ventas)."
   }
 }
