@@ -10,12 +10,12 @@ export interface IPrusaSlicerService {
 }
 
 const FILAMENT_REGEX = /^;\s*filament used \[g\]\s*=\s*([\d.]+)/m;
-const TIMEOUT_MS = 60_000;
 
 export class PrusaSlicerService implements IPrusaSlicerService {
   constructor(
     private readonly bin: string,
     private readonly layerHeight: string,
+    private readonly timeoutMs: number = 300_000,
   ) {}
 
   async slice(stlPath: string, densidad: number): Promise<SliceResult> {
@@ -54,8 +54,8 @@ export class PrusaSlicerService implements IPrusaSlicerService {
 
       const timer = setTimeout(() => {
         proc.kill('SIGKILL');
-        reject(new Error('timeout: PrusaSlicer exceeded 60s'));
-      }, TIMEOUT_MS);
+        reject(new Error(`timeout: PrusaSlicer exceeded ${this.timeoutMs}ms`));
+      }, this.timeoutMs);
 
       proc.on('error', (err) => {
         clearTimeout(timer);

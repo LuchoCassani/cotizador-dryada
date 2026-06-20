@@ -80,9 +80,11 @@ export class QuoteService {
         const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad);
         gramosTotal = sliced.gramosTotal * (1 + params.desperdicioPct);
         weightSource = 'prusaslicer';
-      } catch {
-        // fallback a N1
+      } catch (err) {
+        console.warn('[quote] PrusaSlicer falló, usando fallback N1:', err instanceof Error ? err.message : err);
       }
+    } else {
+      console.warn('[quote] STL no encontrado en disco, usando fallback N1. Path:', stlPath);
     }
 
     if (weightSource === 'n1') {

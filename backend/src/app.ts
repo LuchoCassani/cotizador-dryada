@@ -16,16 +16,17 @@ import { AdminPasswordService } from './services/admin-password.service';
 
 // FR-010: Validación de env vars de PrusaSlicer con zod al arranque
 const prusaEnvSchema = z.object({
-  PRUSASLICER_BIN:    z.string().min(1).default('prusa-slicer'),
-  UPLOADS_DIR:        z.string().min(1).default('/tmp/cotizador-uploads'),
-  PRUSA_LAYER_HEIGHT: z.string().regex(/^\d+\.\d+$/).default('0.20'),
+  PRUSASLICER_BIN:      z.string().min(1).default('prusa-slicer'),
+  UPLOADS_DIR:          z.string().min(1).default('/tmp/cotizador-uploads'),
+  PRUSA_LAYER_HEIGHT:   z.string().regex(/^\d+\.\d+$/).default('0.20'),
+  PRUSA_TIMEOUT_MS:     z.coerce.number().int().positive().default(300_000),
 });
 const prusaEnvResult = prusaEnvSchema.safeParse(process.env);
 if (!prusaEnvResult.success) {
   console.error('[startup] Variables de entorno de PrusaSlicer inválidas:', prusaEnvResult.error.issues);
   process.exit(1);
 }
-const { PRUSASLICER_BIN, UPLOADS_DIR, PRUSA_LAYER_HEIGHT } = prusaEnvResult.data;
+const { PRUSASLICER_BIN, UPLOADS_DIR, PRUSA_LAYER_HEIGHT, PRUSA_TIMEOUT_MS } = prusaEnvResult.data;
 
 const DB_PATH = process.env.DB_PATH ?? './data/cotizador.db';
 
@@ -77,7 +78,7 @@ const pricesAdapter: IPricesRepository = {
 
 export const pricesRepo   = pricesAdapter;
 export const quoteRepo    = new SqliteQuoteRepository(db);
-const prusaSlicerService  = new PrusaSlicerService(PRUSASLICER_BIN, PRUSA_LAYER_HEIGHT);
+const prusaSlicerService  = new PrusaSlicerService(PRUSASLICER_BIN, PRUSA_LAYER_HEIGHT, PRUSA_TIMEOUT_MS);
 export const quoteService = new QuoteService(pricesAdapter, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
 export const emailService = new EmailService();
 
