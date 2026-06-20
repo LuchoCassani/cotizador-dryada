@@ -45,6 +45,10 @@ describe('PrusaSlicerService', () => {
     svc = new PrusaSlicerService('prusa-slicer', '0.20');
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('caso éxito: devuelve gramosTotal parseado del gcode', async () => {
     const proc = makeProc();
     mockSpawn.mockReturnValue(proc as any);
@@ -100,22 +104,21 @@ describe('PrusaSlicerService', () => {
     await expect(svc.slice('/tmp/abc123.stl', 1.24)).rejects.toThrow('exit code 1');
   });
 
-  it('EC-003: lanza y mata el proceso cuando supera el timeout de 60s', async () => {
+  it('EC-003: lanza y mata el proceso cuando supera el timeout configurado', async () => {
     vi.useFakeTimers();
 
     const proc = makeProc();
     mockSpawn.mockReturnValue(proc as any);
 
-    const slicePromise = svc.slice('/tmp/abc123.stl', 1.24);
+    const shortTimeoutSvc = new PrusaSlicerService('prusa-slicer', '0.20', 500);
+    const slicePromise = shortTimeoutSvc.slice('/tmp/abc123.stl', 1.24);
     // Adjuntar el handler de rechazo ANTES de avanzar timers para evitar unhandledRejection
     const assertion = expect(slicePromise).rejects.toThrow('timeout');
 
-    await vi.advanceTimersByTimeAsync(60_001);
+    await vi.advanceTimersByTimeAsync(501);
     await assertion;
 
     expect((proc as any).kill).toHaveBeenCalledWith('SIGKILL');
-
-    vi.useRealTimers();
   });
 
   it('EC-004: lanza cuando el gcode no contiene la línea filament used [g]', async () => {
