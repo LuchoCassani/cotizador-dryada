@@ -25,6 +25,7 @@ describe('AdminSessionService', () => {
 
   it('isValid() devuelve false y elimina el token cuando está expirado', () => {
     const token = service.createSession()
+    // acceso al Map privado para forzar expiración sin esperar 8h reales
     const sessions = (service as unknown as { sessions: Map<string, { expiresAt: number }> }).sessions
     sessions.set(token, { expiresAt: Date.now() - 1000 })
 

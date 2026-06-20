@@ -97,6 +97,7 @@ describe('Autenticación de rutas protegidas', () => {
   })
 
   it('token expirado devuelve 401 y es eliminado del mapa (lazy cleanup)', async () => {
+    // acceso al Map privado para forzar expiración sin esperar 8h reales
     const sessions = (adminSessionService as unknown as { sessions: Map<string, { expiresAt: number }> }).sessions
     sessions.set('expired-token', { expiresAt: Date.now() - 1000 })
     const res = await app.inject({

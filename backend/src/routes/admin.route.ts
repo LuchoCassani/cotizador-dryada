@@ -3,10 +3,51 @@ import { timingSafeEqual } from 'crypto'
 import { adminSessionService } from '../services/admin-session.service'
 import { materialsRepo, machinesRepo, paramsRepo } from '../app'
 
+const idParams = { type: 'object', properties: { id: { type: 'string' } }, additionalProperties: false }
+
+const materialBody = {
+  type: 'object',
+  properties: {
+    nombre: { type: 'string' }, precioPorCartucho750gEUR: { type: 'number' },
+    densidadGCm3: { type: 'number' }, activo: { type: 'boolean' },
+  },
+  additionalProperties: false,
+}
+
+const machineBody = {
+  type: 'object',
+  properties: {
+    nombre: { type: 'string' }, capacidadXmm: { type: 'number' }, capacidadYmm: { type: 'number' },
+    capacidadZmm: { type: 'number' }, costoUsd: { type: 'number' },
+    mesesAmortizacion: { type: 'integer' }, activa: { type: 'boolean' },
+  },
+  additionalProperties: false,
+}
+
+const paramsBody = {
+  type: 'object',
+  properties: {
+    tasaEurUsd: { type: 'number' }, tasaArsUsd: { type: 'number' },
+    tarifaManoObraUsdHora: { type: 'number' }, horasPorPieza: { type: 'number' },
+    desperdicioPct: { type: 'number' }, costosAdicionalesUsd: { type: 'number' },
+    coeficienteGanancia: { type: 'number' }, piezasPorDiaEstimadas: { type: 'number' },
+  },
+  additionalProperties: false,
+}
+
 export const adminRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: { password?: string } }>(
     '/api/admin/login',
-    { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+    {
+      config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+      schema: {
+        body: {
+          type: 'object',
+          properties: { password: { type: 'string' } },
+          additionalProperties: false,
+        },
+      },
+    },
     async (request, reply) => {
       const adminPassword = process.env.ADMIN_PASSWORD
       if (!adminPassword) {
@@ -38,13 +79,14 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
 
     // --- Materiales ---
 
-    api.get('/api/admin/materials', async (_request, reply) => {
+    api.get('/api/admin/materials', { schema: {} }, async (_request, reply) => {
       const materials = await materialsRepo.getAll()
       return reply.send(materials)
     })
 
     api.post<{ Body: { nombre?: string; precioPorCartucho750gEUR?: number; densidadGCm3?: number; activo?: boolean } }>(
       '/api/admin/materials',
+      { schema: { body: { ...materialBody, required: ['nombre', 'precioPorCartucho750gEUR', 'densidadGCm3'] } } },
       async (request, reply) => {
         const { nombre, precioPorCartucho750gEUR, densidadGCm3, activo = true } = request.body ?? {}
         if (!nombre?.trim()) {
@@ -70,6 +112,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
       Body: { nombre?: string; precioPorCartucho750gEUR?: number; densidadGCm3?: number; activo?: boolean }
     }>(
       '/api/admin/materials/:id',
+      { schema: { params: idParams, body: materialBody } },
       async (request, reply) => {
         const { id } = request.params
         const existing = await materialsRepo.getById(id)
@@ -102,6 +145,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
 
     api.delete<{ Params: { id: string } }>(
       '/api/admin/materials/:id',
+      { schema: { params: idParams } },
       async (request, reply) => {
         const { id } = request.params
         const existing = await materialsRepo.getById(id)
@@ -115,7 +159,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
 
     // --- Máquinas ---
 
-    api.get('/api/admin/machines', async (_request, reply) => {
+    api.get('/api/admin/machines', { schema: {} }, async (_request, reply) => {
       const machines = await machinesRepo.getAll()
       return reply.send(machines)
     })
@@ -124,6 +168,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
       Body: { nombre?: string; capacidadXmm?: number; capacidadYmm?: number; capacidadZmm?: number; costoUsd?: number; mesesAmortizacion?: number; activa?: boolean }
     }>(
       '/api/admin/machines',
+      { schema: { body: { ...machineBody, required: ['nombre', 'capacidadXmm', 'capacidadYmm', 'capacidadZmm', 'costoUsd', 'mesesAmortizacion'] } } },
       async (request, reply) => {
         const { nombre, capacidadXmm, capacidadYmm, capacidadZmm, costoUsd, mesesAmortizacion, activa = true } = request.body ?? {}
         if (!nombre?.trim()) {
@@ -152,6 +197,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
       Body: { nombre?: string; capacidadXmm?: number; capacidadYmm?: number; capacidadZmm?: number; costoUsd?: number; mesesAmortizacion?: number; activa?: boolean }
     }>(
       '/api/admin/machines/:id',
+      { schema: { params: idParams, body: machineBody } },
       async (request, reply) => {
         const { id } = request.params
         const existing = await machinesRepo.getById(id)
@@ -196,6 +242,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
 
     api.delete<{ Params: { id: string } }>(
       '/api/admin/machines/:id',
+      { schema: { params: idParams } },
       async (request, reply) => {
         const { id } = request.params
         const existing = await machinesRepo.getById(id)
@@ -209,7 +256,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
 
     // --- Parámetros globales ---
 
-    api.get('/api/admin/params', async (_request, reply) => {
+    api.get('/api/admin/params', { schema: {} }, async (_request, reply) => {
       const params = await paramsRepo.get()
       return reply.send(params)
     })
@@ -222,6 +269,7 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
       }
     }>(
       '/api/admin/params',
+      { schema: { body: paramsBody } },
       async (request, reply) => {
         const body = request.body ?? {}
         for (const [key, value] of Object.entries(body)) {
