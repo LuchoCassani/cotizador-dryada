@@ -3,9 +3,10 @@ import { adminLogin } from '../../services/api'
 
 interface Props {
   onLogin: () => void
+  onBack: () => void
 }
 
-export function AdminLogin({ onLogin }: Props) {
+export function AdminLogin({ onLogin, onBack }: Props) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -58,6 +59,13 @@ export function AdminLogin({ onLogin }: Props) {
             {loading ? 'Verificando…' : 'Ingresar'}
           </button>
         </form>
+
+        <button
+          onClick={onBack}
+          className="mt-4 w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          ← Volver al cotizador
+        </button>
       </div>
     </div>
   )

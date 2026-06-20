@@ -12,6 +12,7 @@ import { initDatabase } from './db/init';
 import { SqliteMachinesRepository } from './repositories/sqlite-machines.repository';
 import { SqliteMaterialsRepository } from './repositories/sqlite-materials.repository';
 import { SqliteGlobalParamsRepository } from './repositories/sqlite-global-params.repository';
+import { AdminPasswordService } from './services/admin-password.service';
 
 // FR-010: Validación de env vars de PrusaSlicer con zod al arranque
 const prusaEnvSchema = z.object({
@@ -37,9 +38,10 @@ try {
 
 const db = initDatabase(DB_PATH);
 
-export const machinesRepo  = new SqliteMachinesRepository(db);
-export const materialsRepo = new SqliteMaterialsRepository(db);
-export const paramsRepo    = new SqliteGlobalParamsRepository(db);
+export const machinesRepo        = new SqliteMachinesRepository(db);
+export const materialsRepo       = new SqliteMaterialsRepository(db);
+export const paramsRepo          = new SqliteGlobalParamsRepository(db);
+export const adminPasswordService = new AdminPasswordService(db);
 
 if (!process.env.ADMIN_PASSWORD) {
   console.warn('[startup] ADMIN_PASSWORD no configurada — panel de admin deshabilitado');

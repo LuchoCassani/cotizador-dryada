@@ -1,7 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
-import { timingSafeEqual } from 'crypto'
 import { adminSessionService } from '../services/admin-session.service'
-import { materialsRepo, machinesRepo, paramsRepo } from '../app'
+import { materialsRepo, machinesRepo, paramsRepo, adminPasswordService } from '../app'
 
 const idParams = { type: 'object', properties: { id: { type: 'string' } }, additionalProperties: false }
 
@@ -27,11 +26,15 @@ const machineBody = {
 const paramsBody = {
   type: 'object',
   properties: {
-    tasaEurUsd: { type: 'number' }, tasaArsUsd: { type: 'number' },
-    tarifaManoObraUsdHora: { type: 'number' }, horasPorPieza: { type: 'number' },
-    desperdicioPct: { type: 'number' }, costosAdicionalesUsd: { type: 'number' },
-    coeficienteGanancia: { type: 'number' }, piezasPorDiaEstimadas: { type: 'number' },
+    tasaEurUsd: { type: 'number' }, tasaArsUsd: { type: 'number' }, tarifaManoObraUsdHora: { type: 'number' }, horasPorPieza: { type: 'number' },
+    desperdicioPct: { type: 'number' }, costosAdicionalesUsd: { type: 'number' }, coeficienteGanancia: { type: 'number' }, piezasPorDiaEstimadas: { type: 'number' },
   },
+  additionalProperties: false,
+}
+
+const passwordBody = {
+  type: 'object',
+  properties: { currentPassword: { type: 'string' }, newPassword: { type: 'string' } },
   additionalProperties: false,
 }
 
@@ -49,20 +52,10 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const adminPassword = process.env.ADMIN_PASSWORD
-      if (!adminPassword) {
-        return reply.status(503).send({ error: 'Panel de admin no configurado', code: 'ADMIN_DISABLED' })
-      }
-
       const { password } = request.body
-      const expected = Buffer.from(adminPassword)
-      const received = Buffer.from(password ?? '')
-      const isMatch = expected.length === received.length && timingSafeEqual(expected, received)
-
-      if (!isMatch) {
-        return reply.status(401).send({ error: 'Contraseña incorrecta', code: 'ADMIN_UNAUTHORIZED' })
-      }
-
+      const { match, configured } = await adminPasswordService.verifyLogin(password ?? '')
+      if (!configured) return reply.status(503).send({ error: 'Panel de admin no configurado', code: 'ADMIN_DISABLED' })
+      if (!match) return reply.status(401).send({ error: 'Contraseña incorrecta', code: 'ADMIN_UNAUTHORIZED' })
       const token = adminSessionService.createSession()
       const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
       return reply.send({ token, expiresAt })
@@ -285,6 +278,21 @@ export const adminRoute: FastifyPluginAsync = async (fastify) => {
         await paramsRepo.update(body)
         const updated = await paramsRepo.get()
         return reply.send(updated)
+      }
+    )
+
+    // --- Contraseña ---
+
+    api.put<{ Body: { currentPassword?: string; newPassword?: string } }>(
+      '/api/admin/password',
+      { schema: { body: passwordBody } },
+      async (request, reply) => {
+        const { currentPassword, newPassword } = request.body ?? {}
+        if (!currentPassword || !newPassword) return reply.status(400).send({ error: 'Faltan campos requeridos', code: 'VALIDATION_ERROR' })
+        if (newPassword.length < 8) return reply.status(400).send({ error: 'La contraseña debe tener al menos 8 caracteres', code: 'VALIDATION_ERROR' })
+        const result = await adminPasswordService.change(currentPassword, newPassword)
+        if (!result.ok) return reply.status(401).send({ error: result.error ?? 'Contraseña actual incorrecta', code: 'ADMIN_UNAUTHORIZED' })
+        return reply.status(204).send()
       }
     )
   })

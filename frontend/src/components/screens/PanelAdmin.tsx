@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { TabMateriales } from '../admin/TabMateriales'
 import { TabMaquinas } from '../admin/TabMaquinas'
 import { TabParametros } from '../admin/TabParametros'
+import { TabSeguridad } from '../admin/TabSeguridad'
 
-type Tab = 'materiales' | 'maquinas' | 'parametros'
+type Tab = 'materiales' | 'maquinas' | 'parametros' | 'seguridad'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'materiales', label: 'Materiales' },
   { id: 'maquinas', label: 'Máquinas' },
   { id: 'parametros', label: 'Parámetros' },
+  { id: 'seguridad', label: 'Seguridad' },
 ]
 
 interface Props {
@@ -66,6 +68,7 @@ export function PanelAdmin({ onBack, onSessionExpired }: Props) {
         {activeTab === 'materiales' && <TabMateriales onSessionExpired={onSessionExpired} />}
         {activeTab === 'maquinas' && <TabMaquinas onSessionExpired={onSessionExpired} />}
         {activeTab === 'parametros' && <TabParametros onSessionExpired={onSessionExpired} />}
+        {activeTab === 'seguridad' && <TabSeguridad onSessionExpired={onSessionExpired} />}
       </div>
     </div>
   )

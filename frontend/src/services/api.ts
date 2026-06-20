@@ -166,3 +166,12 @@ export async function adminUpdateParams(data: Partial<Omit<ParametrosGlobales, '
   })
   return handleAdminResponse<ParametrosGlobales>(res)
 }
+
+export async function adminChangePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const res = await fetch('/api/admin/password', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...adminHeaders() },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+  return handleAdminResponse<void>(res)
+}

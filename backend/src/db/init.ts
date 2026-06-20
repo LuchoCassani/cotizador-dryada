@@ -74,6 +74,11 @@ export function initDatabase(dbPath: string): Database.Database {
       );
 
       CREATE INDEX IF NOT EXISTS idx_cotizaciones_empleado ON cotizaciones(empleado_id);
+
+      CREATE TABLE IF NOT EXISTS configuracion (
+        clave TEXT PRIMARY KEY,
+        valor TEXT NOT NULL
+      );
     `);
   } catch {
     throw new Error(`No se pudo abrir la base de datos en ${dbPath}.`);
@@ -82,6 +87,7 @@ export function initDatabase(dbPath: string): Database.Database {
   // Migraciones aditivas — no destruyen datos en DBs existentes
   try { db.exec('ALTER TABLE parametros_globales ADD COLUMN piezas_por_dia_estimadas INTEGER NOT NULL DEFAULT 20'); } catch { /* columna ya existe */ }
   try { db.exec("ALTER TABLE cotizaciones ADD COLUMN maquina_id TEXT NOT NULL DEFAULT ''"); } catch { /* columna ya existe */ }
+  try { db.exec('CREATE TABLE IF NOT EXISTS configuracion (clave TEXT PRIMARY KEY, valor TEXT NOT NULL)'); } catch { /* ya existe */ }
 
   const { n } = db.prepare('SELECT COUNT(*) as n FROM maquinas').get() as { n: number };
   if (n === 0) {

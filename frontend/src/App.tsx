@@ -90,7 +90,7 @@ export default function App() {
                 onSessionExpired={() => setAdminAuthenticated(false)}
               />
             ) : (
-              <AdminLogin onLogin={() => setAdminAuthenticated(true)} />
+              <AdminLogin onLogin={() => setAdminAuthenticated(true)} onBack={() => setMode('cotizacion')} />
             )
           ) : (
             <>
