@@ -20,21 +20,29 @@ export default function App() {
   const [mode, setMode] = useState<'cotizacion' | 'admin'>('cotizacion')
   const [adminAuthenticated, setAdminAuthenticated] = useState(() => !!sessionStorage.getItem('admin_token'))
   // null = verificando, false = requiere login, true = autenticado
-  const [cotizadorAuthenticated, setCotizadorAuthenticated] = useState<boolean | null>(
-    sessionStorage.getItem('cotizador_token') ? true : null
-  )
+  const [cotizadorAuthenticated, setCotizadorAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
-    if (cotizadorAuthenticated !== null) return
     getCotizadorAuthStatus()
       .then(({ requiresPassword }) => {
         if (!requiresPassword) {
-          // COTIZADOR_AUTH_DISABLED=true en el servidor: acceso abierto, opt-in explícito
+          // COTIZADOR_AUTH_DISABLED=true: acceso abierto, opt-in explícito del operador
           cotizadorLogin('').then(({ token }) => {
-            sessionStorage.setItem('cotizador_token', token)
+            sessionStorage.setItem('cotizador_auth', JSON.stringify({ token, passwordRequired: false }))
             setCotizadorAuthenticated(true)
           }).catch(() => setCotizadorAuthenticated(false))
         } else {
+          // Verificar si la sesión guardada fue obtenida con password (no un token stale)
+          try {
+            const stored = JSON.parse(sessionStorage.getItem('cotizador_auth') ?? '{}')
+            if (stored.passwordRequired === true && stored.token) {
+              setCotizadorAuthenticated(true)
+              return
+            }
+          } catch { /* malformed */ }
+          // Token inexistente o stale (emitido sin password) — limpiar y pedir login
+          sessionStorage.removeItem('cotizador_auth')
+          sessionStorage.removeItem('cotizador_token')
           setCotizadorAuthenticated(false)
         }
       })

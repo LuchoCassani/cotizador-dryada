@@ -16,7 +16,8 @@ export function CotizadorLogin({ onLogin }: Props) {
     setLoading(true)
     try {
       const { token } = await cotizadorLogin(password)
-      sessionStorage.setItem('cotizador_token', token)
+      sessionStorage.setItem('cotizador_auth', JSON.stringify({ token, passwordRequired: true }))
+      sessionStorage.removeItem('cotizador_token') // limpia tokens stale del formato anterior
       onLogin()
     } catch {
       setError('Contraseña incorrecta')
