@@ -64,6 +64,11 @@ export async function sendEmail(quoteId: string, destinatario: string, pdfBase64
 
 // --- Auth cotizador ---
 
+export async function getCotizadorAuthStatus(): Promise<{ requiresPassword: boolean }> {
+  const res = await fetch('/api/auth/status', { headers: authHeaders() })
+  return handleResponse<{ requiresPassword: boolean }>(res)
+}
+
 export async function cotizadorLogin(password: string): Promise<{ token: string }> {
   const res = await fetch('/api/auth/login', {
     method: 'POST',

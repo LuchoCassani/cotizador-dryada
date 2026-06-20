@@ -12,7 +12,7 @@ import { PanelAdmin } from './components/screens/PanelAdmin'
 import { CotizadorLogin } from './components/screens/CotizadorLogin'
 import { CotizacionPDF } from './components/pdf/CotizacionPDF'
 import { numeroCotizacion } from './utils/format'
-import { cotizadorLogin } from './services/api'
+import { getCotizadorAuthStatus, cotizadorLogin } from './services/api'
 import type { Step, UploadResult, CotizacionResult } from './types'
 import './App.css'
 
@@ -26,13 +26,19 @@ export default function App() {
 
   useEffect(() => {
     if (cotizadorAuthenticated !== null) return
-    // Intento silencioso: si no hay COTIZADOR_PASSWORD en el servidor, devuelve token sin validar
-    cotizadorLogin('').then(({ token }) => {
-      sessionStorage.setItem('cotizador_token', token)
-      setCotizadorAuthenticated(true)
-    }).catch(() => {
-      setCotizadorAuthenticated(false)
-    })
+    getCotizadorAuthStatus()
+      .then(({ requiresPassword }) => {
+        if (!requiresPassword) {
+          // COTIZADOR_AUTH_DISABLED=true en el servidor: acceso abierto, opt-in explícito
+          cotizadorLogin('').then(({ token }) => {
+            sessionStorage.setItem('cotizador_token', token)
+            setCotizadorAuthenticated(true)
+          }).catch(() => setCotizadorAuthenticated(false))
+        } else {
+          setCotizadorAuthenticated(false)
+        }
+      })
+      .catch(() => setCotizadorAuthenticated(false))
   }, [])
   const [step, setStep] = useState<Step>(0)
   const [empleado, setEmpleado] = useState('')
