@@ -4,17 +4,20 @@ import { initDatabase } from '../../src/db/init'
 import { SqliteMaterialsRepository } from '../../src/repositories/sqlite-materials.repository'
 import { SqliteMachinesRepository } from '../../src/repositories/sqlite-machines.repository'
 import { SqliteGlobalParamsRepository } from '../../src/repositories/sqlite-global-params.repository'
+import { AdminPasswordService } from '../../src/services/admin-password.service'
 import { adminRoute } from '../../src/routes/admin.route'
 import { adminSessionService } from '../../src/services/admin-session.service'
 
 let _materialsRepo: SqliteMaterialsRepository
 let _machinesRepo: SqliteMachinesRepository
 let _paramsRepo: SqliteGlobalParamsRepository
+let _adminPasswordService: AdminPasswordService
 
 vi.mock('../../src/app', () => ({
   get materialsRepo() { return _materialsRepo },
   get machinesRepo() { return _machinesRepo },
   get paramsRepo() { return _paramsRepo },
+  get adminPasswordService() { return _adminPasswordService },
 }))
 
 const TEST_PASSWORD = 'test-admin-password-123'
@@ -27,6 +30,7 @@ beforeEach(async () => {
   _materialsRepo = new SqliteMaterialsRepository(db)
   _machinesRepo = new SqliteMachinesRepository(db)
   _paramsRepo = new SqliteGlobalParamsRepository(db)
+  _adminPasswordService = new AdminPasswordService(db)
   app = Fastify({ logger: false })
   await app.register(adminRoute)
   await app.ready()
