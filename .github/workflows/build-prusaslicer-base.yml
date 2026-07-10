@@ -9,8 +9,17 @@ on:
         default: '2.8.1'
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            dockerfile: docker/Dockerfile.prusaslicer
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            dockerfile: docker/Dockerfile.prusaslicer.arm64
+    runs-on: ${{ matrix.runner }}
     permissions:
       packages: write
 
@@ -35,8 +44,34 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: docker/Dockerfile.prusaslicer
+          file: ${{ matrix.dockerfile }}
           push: true
+          build-args: |
+            PRUSASLICER_VERSION=${{ inputs.version }}
           tags: |
-            ghcr.io/luchocassani/dryada-prusaslicer-base:${{ inputs.version }}
-            ghcr.io/luchocassani/dryada-prusaslicer-base:latest
+            ghcr.io/luchocassani/dryada-prusaslicer-base:${{ inputs.version }}-${{ matrix.arch }}
+            ghcr.io/luchocassani/dryada-prusaslicer-base:latest-${{ matrix.arch }}
+
+  manifest:
+    name: Combine into multi-arch manifest
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifest
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/luchocassani/dryada-prusaslicer-base:${VERSION} \
+            -t ghcr.io/luchocassani/dryada-prusaslicer-base:latest \
+            ghcr.io/luchocassani/dryada-prusaslicer-base:${VERSION}-amd64 \
+            ghcr.io/luchocassani/dryada-prusaslicer-base:${VERSION}-arm64
