@@ -16,8 +16,9 @@ const GRAMOS_REFERENCIA = 10;
 // Cotizar no es validar si la pieza entra en la máquina elegida (esa decisión es de
 // producción, y una pieza grande siempre se puede imprimir por partes) — el volumen
 // de build se fija bien grande para que PrusaSlicer nunca lo use como motivo de
-// rechazo al calcular el peso/precio.
-const COTIZACION_BUILD_VOLUME: BuildVolume = { xMm: 2000, yMm: 2000, zMm: 2000 };
+// rechazo al calcular el peso/precio. 1000mm funciona de forma confiable; valores
+// mayores (probado con 1500) exceden el rango que acepta --max-print-height.
+const COTIZACION_BUILD_VOLUME: BuildVolume = { xMm: 1000, yMm: 1000, zMm: 1000 };
 
 export interface CotizacionInput {
   stlAnalysis: StlAnalysis;
