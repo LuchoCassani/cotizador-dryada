@@ -204,9 +204,22 @@ describe('QuoteService.calcularCotizacion — propagación de onProgress', () =>
     expect(prusaSlicerService.slice).toHaveBeenCalledWith(
       path.join(uploadsDir, 'upload-test.stl'),
       1.24,
-      { xMm: 180, yMm: 180, zMm: 180 },
+      expect.any(Object),
       undefined,
       onProgress,
     );
+  });
+
+  it('usa un build volume fijo y grande, no las dimensiones de la máquina seleccionada (cotizar no valida si entra en esa máquina)', async () => {
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos();
+    (prusaSlicerService.slice as ReturnType<typeof vi.fn>).mockResolvedValue({ gramosTotal: 5 });
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
+
+    await service.calcularCotizacion(makeInput());
+
+    const [, , buildVolume] = (prusaSlicerService.slice as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(buildVolume.xMm).toBeGreaterThan(180);
+    expect(buildVolume.yMm).toBeGreaterThan(180);
+    expect(buildVolume.zMm).toBeGreaterThan(180);
   });
 });

@@ -5,13 +5,19 @@ import { IPricesRepository } from '../repositories/prices.repository';
 import { IGlobalParametersRepository } from '../repositories/global-params.repository';
 import { IMachinesRepository } from '../repositories/machines.repository';
 import { IQuoteRepository, QuoteRecord } from '../repositories/quote.repository';
-import { IPrusaSlicerService, ProgressCallback } from './prusa-slicer.service';
+import { IPrusaSlicerService, ProgressCallback, BuildVolume } from './prusa-slicer.service';
 import { StlAnalysis } from './stl-processor';
 
 const FILL_RATIO = 0.10;
 const N_PERIMETROS = 2;
 const ANCHO_LINEA_CM = 0.04;
 const GRAMOS_REFERENCIA = 10;
+
+// Cotizar no es validar si la pieza entra en la máquina elegida (esa decisión es de
+// producción, y una pieza grande siempre se puede imprimir por partes) — el volumen
+// de build se fija bien grande para que PrusaSlicer nunca lo use como motivo de
+// rechazo al calcular el peso/precio.
+const COTIZACION_BUILD_VOLUME: BuildVolume = { xMm: 2000, yMm: 2000, zMm: 2000 };
 
 export interface CotizacionInput {
   stlAnalysis: StlAnalysis;
@@ -79,8 +85,7 @@ export class QuoteService {
 
     if (stlExists) {
       try {
-        const buildVolume = { xMm: machine.capacidadXmm, yMm: machine.capacidadYmm, zMm: machine.capacidadZmm };
-        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, buildVolume, input.signal, input.onProgress);
+        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, COTIZACION_BUILD_VOLUME, input.signal, input.onProgress);
         gramosTotal = sliced.gramosTotal * (1 + params.desperdicioPct);
         weightSource = 'prusaslicer';
       } catch (err) {
