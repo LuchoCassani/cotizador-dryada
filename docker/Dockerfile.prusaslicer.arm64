@@ -35,6 +35,13 @@ RUN sed -i \
       's|URL https://www.mpfr.org/mpfr-current/mpfr-4.2.1.tar.bz2|URL https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.1.tar.bz2 https://www.mpfr.org/mpfr-current/mpfr-4.2.1.tar.bz2|' \
       /opt/PrusaSlicer/deps/+MPFR/MPFR.cmake
 
+# Fix: gmplib.org tiene conectividad poco confiable desde runners de GitHub
+# Actions (timeout de conexión visto en CI, no reproducido localmente). Se
+# agrega el mirror de GNU (mismo proyecto, misma versión, mismo hash).
+RUN sed -i \
+      's|URL https://gmplib.org/download/gmp/gmp-6.2.1.tar.bz2|URL https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.bz2 https://gmplib.org/download/gmp/gmp-6.2.1.tar.bz2|' \
+      /opt/PrusaSlicer/deps/+GMP/GMP.cmake
+
 WORKDIR /opt/PrusaSlicer/deps
 RUN mkdir build && cd build \
     && cmake .. -DDEP_WX_GTK3=ON \
