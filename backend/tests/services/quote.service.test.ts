@@ -1,4 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
 import { QuoteService } from '../../src/services/quote.service';
 import type { IPricesRepository } from '../../src/repositories/prices.repository';
 import type { IGlobalParametersRepository, ParametrosGlobales } from '../../src/repositories/global-params.repository';
@@ -171,5 +174,38 @@ describe('QuoteService.calcularCotizacion', () => {
     const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
     await service.calcularCotizacion(makeInput());
     expect(paramsRepo.get).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('QuoteService.calcularCotizacion — propagación de onProgress', () => {
+  const originalUploadsDir = process.env.UPLOADS_DIR;
+  let uploadsDir: string;
+
+  beforeEach(async () => {
+    uploadsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cotizador-uploads-test-'));
+    process.env.UPLOADS_DIR = uploadsDir;
+    await fs.writeFile(path.join(uploadsDir, 'upload-test.stl'), 'stl-de-prueba');
+  });
+
+  afterEach(async () => {
+    process.env.UPLOADS_DIR = originalUploadsDir;
+    await fs.rm(uploadsDir, { recursive: true, force: true });
+  });
+
+  it('cuando el STL existe en disco, pasa el callback onProgress a prusaSlicerService.slice', async () => {
+    const { pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService } = makeRepos();
+    (prusaSlicerService.slice as ReturnType<typeof vi.fn>).mockResolvedValue({ gramosTotal: 5 });
+    const service = new QuoteService(pricesRepo, paramsRepo, machinesRepo, quoteRepo, prusaSlicerService);
+    const onProgress = vi.fn();
+
+    const result = await service.calcularCotizacion({ ...makeInput(), onProgress });
+
+    expect(result.weightSource).toBe('prusaslicer');
+    expect(prusaSlicerService.slice).toHaveBeenCalledWith(
+      path.join(uploadsDir, 'upload-test.stl'),
+      1.24,
+      undefined,
+      onProgress,
+    );
   });
 });

@@ -5,7 +5,7 @@ import { IPricesRepository } from '../repositories/prices.repository';
 import { IGlobalParametersRepository } from '../repositories/global-params.repository';
 import { IMachinesRepository } from '../repositories/machines.repository';
 import { IQuoteRepository, QuoteRecord } from '../repositories/quote.repository';
-import { IPrusaSlicerService } from './prusa-slicer.service';
+import { IPrusaSlicerService, ProgressCallback } from './prusa-slicer.service';
 import { StlAnalysis } from './stl-processor';
 
 const FILL_RATIO = 0.10;
@@ -21,6 +21,7 @@ export interface CotizacionInput {
   empleadoId: string;
   observaciones?: string;
   signal?: AbortSignal;
+  onProgress?: ProgressCallback;
 }
 
 export interface CotizacionResult {
@@ -78,7 +79,7 @@ export class QuoteService {
 
     if (stlExists) {
       try {
-        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, input.signal);
+        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, input.signal, input.onProgress);
         gramosTotal = sliced.gramosTotal * (1 + params.desperdicioPct);
         weightSource = 'prusaslicer';
       } catch (err) {

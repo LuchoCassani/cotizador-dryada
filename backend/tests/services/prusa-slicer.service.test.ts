@@ -151,4 +151,68 @@ describe('PrusaSlicerService', () => {
     await expect(svc.slice('/tmp/abc123.stl', 1.24)).rejects.toThrow();
     expect(mockUnlink).toHaveBeenCalledWith('/tmp/abc123.gcode');
   });
+
+  it('progreso: parsea líneas "N => etapa" del stdout y llama a onProgress', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as any);
+    mockRead.mockResolvedValue(GCODE_OK as any);
+    const onProgress = vi.fn();
+
+    setImmediate(() => {
+      (proc.stdout as EventEmitter).emit('data', Buffer.from('10 => Processing triangulated mesh\n'));
+      (proc.stdout as EventEmitter).emit('data', Buffer.from('45 => Making infill\n'));
+      proc.emit('close', 0);
+    });
+
+    await svc.slice('/tmp/abc123.stl', 1.24, undefined, onProgress);
+
+    expect(onProgress).toHaveBeenNthCalledWith(1, 10, 'Processing triangulated mesh');
+    expect(onProgress).toHaveBeenNthCalledWith(2, 45, 'Making infill');
+  });
+
+  it('progreso: reconstruye una línea partida en varios chunks del stream', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as any);
+    mockRead.mockResolvedValue(GCODE_OK as any);
+    const onProgress = vi.fn();
+
+    setImmediate(() => {
+      (proc.stdout as EventEmitter).emit('data', Buffer.from('65 => Searching '));
+      (proc.stdout as EventEmitter).emit('data', Buffer.from('support spots\n'));
+      proc.emit('close', 0);
+    });
+
+    await svc.slice('/tmp/abc123.stl', 1.24, undefined, onProgress);
+
+    expect(onProgress).toHaveBeenCalledWith(65, 'Searching support spots');
+  });
+
+  it('progreso: ignora líneas de stdout que no matchean el formato "N => etapa"', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as any);
+    mockRead.mockResolvedValue(GCODE_OK as any);
+    const onProgress = vi.fn();
+
+    setImmediate(() => {
+      (proc.stdout as EventEmitter).emit('data', Buffer.from('some unrelated log line\n'));
+      proc.emit('close', 0);
+    });
+
+    await svc.slice('/tmp/abc123.stl', 1.24, undefined, onProgress);
+
+    expect(onProgress).not.toHaveBeenCalled();
+  });
+
+  it('progreso: onProgress es opcional, no rompe el flujo si se omite', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as any);
+    mockRead.mockResolvedValue(GCODE_OK as any);
+
+    setImmediate(() => {
+      (proc.stdout as EventEmitter).emit('data', Buffer.from('10 => Processing triangulated mesh\n'));
+      proc.emit('close', 0);
+    });
+
+    await expect(svc.slice('/tmp/abc123.stl', 1.24)).resolves.toMatchObject({ gramosTotal: 12.45 });
+  });
 });

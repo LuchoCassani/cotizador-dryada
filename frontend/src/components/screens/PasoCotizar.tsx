@@ -31,6 +31,7 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
   const [cantidad, setCantidad] = useState(1)
   const [observaciones, setObservaciones] = useState('')
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState<{ pct: number; etapa: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -47,22 +48,27 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setProgress(null)
     setLoading(true)
     try {
-      const result = await createQuote({
-        uploadId: uploadResult.uploadId,
-        materialId,
-        maquinaId,
-        cantidad,
-        empleadoId: empleado,
-        observaciones: observaciones.trim() || undefined,
-      })
+      const result = await createQuote(
+        {
+          uploadId: uploadResult.uploadId,
+          materialId,
+          maquinaId,
+          cantidad,
+          empleadoId: empleado,
+          observaciones: observaciones.trim() || undefined,
+        },
+        (pct, etapa) => setProgress({ pct, etapa })
+      )
       onQuote(result, observaciones.trim())
     } catch (err: unknown) {
       const msg = (err as { error?: string })?.error ?? 'Error al calcular la cotización'
       setError(msg)
     } finally {
       setLoading(false)
+      setProgress(null)
     }
   }
 
@@ -169,6 +175,24 @@ export function PasoCotizar({ uploadResult, empleado, onQuote, onBack }: Props) 
             <p className="text-[13px] text-[#991B1B] bg-[#FEF2F2] border border-[#FEE2E2] rounded-lg px-4 py-3 mb-4">
               {error}
             </p>
+          )}
+
+          {loading && (
+            <div className="mb-4 bg-dryada-violet-tint border border-dryada-violet-light rounded-lg px-4 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[13px] text-dryada-violet flex items-center gap-1.5">
+                  <IconLoader2 size={14} className="animate-spin" aria-hidden />
+                  {progress?.etapa ?? 'Calculando...'}
+                </span>
+                {progress && <span className="text-[12px] font-mono text-dryada-violet">{progress.pct}%</span>}
+              </div>
+              <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-dryada-violet transition-[width] duration-300"
+                  style={{ width: `${progress?.pct ?? 0}%` }}
+                />
+              </div>
+            </div>
           )}
 
           <div className="flex items-center gap-2.5">

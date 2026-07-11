@@ -37,20 +37,49 @@ export async function getMachines(): Promise<Maquina[]> {
   return handleResponse<Maquina[]>(res)
 }
 
-export async function createQuote(params: {
-  uploadId: string
-  materialId: string
-  maquinaId: string
-  cantidad: number
-  empleadoId: string
-  observaciones?: string
-}): Promise<CotizacionResult> {
+export async function createQuote(
+  params: {
+    uploadId: string
+    materialId: string
+    maquinaId: string
+    cantidad: number
+    empleadoId: string
+    observaciones?: string
+  },
+  onProgress?: (pct: number, etapa: string) => void
+): Promise<CotizacionResult> {
   const res = await fetch('/api/quote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(params),
   })
-  return handleResponse<CotizacionResult>(res)
+
+  if (!res.ok) {
+    const err: ApiError = await res.json().catch(() => ({ error: 'Error inesperado', code: 'UNKNOWN' }))
+    throw err
+  }
+
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const events = buffer.split('\n\n')
+    buffer = events.pop() ?? ''
+    for (const raw of events) {
+      const line = raw.trim()
+      if (!line.startsWith('data: ')) continue
+      const payload = JSON.parse(line.slice(6))
+      if (payload.type === 'progress') onProgress?.(payload.pct, payload.etapa)
+      else if (payload.type === 'done') return payload.result as CotizacionResult
+      else if (payload.type === 'error') throw { error: payload.message, code: payload.code } as ApiError
+    }
+  }
+
+  throw { error: 'La conexión se cerró antes de recibir el resultado.', code: 'STREAM_CLOSED' } as ApiError
 }
 
 export async function sendEmail(quoteId: string, destinatario: string, pdfBase64: string): Promise<void> {

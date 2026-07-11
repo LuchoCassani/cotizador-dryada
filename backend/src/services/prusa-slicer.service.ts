@@ -5,11 +5,14 @@ export interface SliceResult {
   gramosTotal: number;
 }
 
+export type ProgressCallback = (pct: number, etapa: string) => void;
+
 export interface IPrusaSlicerService {
-  slice(stlPath: string, densidad: number, signal?: AbortSignal): Promise<SliceResult>;
+  slice(stlPath: string, densidad: number, signal?: AbortSignal, onProgress?: ProgressCallback): Promise<SliceResult>;
 }
 
 const FILAMENT_REGEX = /^;\s*filament used \[g\]\s*=\s*([\d.]+)/m;
+const PROGRESS_REGEX = /^(\d{1,3})\s*=>\s*(.+)$/;
 
 export class PrusaSlicerService implements IPrusaSlicerService {
   private busy = false;
@@ -20,7 +23,7 @@ export class PrusaSlicerService implements IPrusaSlicerService {
     private readonly timeoutMs: number = 300_000,
   ) {}
 
-  async slice(stlPath: string, densidad: number, signal?: AbortSignal): Promise<SliceResult> {
+  async slice(stlPath: string, densidad: number, signal?: AbortSignal, onProgress?: ProgressCallback): Promise<SliceResult> {
     if (this.busy) throw new Error('PrusaSlicer ocupado: otro slicing en curso');
     this.busy = true;
     const gcodePath = stlPath.replace('.stl', '.gcode');
@@ -37,7 +40,7 @@ export class PrusaSlicerService implements IPrusaSlicerService {
     ];
 
     try {
-      await this.runProcess(args, signal);
+      await this.runProcess(args, signal, onProgress);
 
       const gcode = await fs.readFile(gcodePath, 'utf-8').finally(() => {
         fs.unlink(gcodePath).catch(() => {});
@@ -57,9 +60,20 @@ export class PrusaSlicerService implements IPrusaSlicerService {
     }
   }
 
-  private runProcess(args: string[], signal?: AbortSignal): Promise<void> {
+  private runProcess(args: string[], signal?: AbortSignal, onProgress?: ProgressCallback): Promise<void> {
     return new Promise((resolve, reject) => {
       const proc = spawn(this.bin, args, { stdio: 'pipe' });
+
+      let stdoutBuffer = '';
+      proc.stdout.on('data', (chunk: Buffer) => {
+        stdoutBuffer += chunk.toString();
+        const lines = stdoutBuffer.split('\n');
+        stdoutBuffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const match = PROGRESS_REGEX.exec(line.trim());
+          if (match) onProgress?.(parseInt(match[1], 10), match[2]);
+        }
+      });
 
       const onAbort = () => {
         proc.kill('SIGKILL');

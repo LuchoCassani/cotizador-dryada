@@ -4,7 +4,7 @@ import { ModelViewer } from '../viewer/ModelViewer'
 import { uploadStl } from '../../services/api'
 import type { UploadResult, Complejidad } from '../../types'
 
-const MAX_MB = 50
+const WARN_MB = 50
 
 interface Props {
   onAnalysis: (result: UploadResult, file: File) => void
@@ -32,6 +32,7 @@ export function PasoSubirSTL({ onAnalysis }: Props) {
   const [dragOver, setDragOver] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
   const [result, setResult] = useState<UploadResult | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -41,12 +42,13 @@ export function PasoSubirSTL({ onAnalysis }: Props) {
       setError('Solo se aceptan archivos .stl')
       return
     }
-    if (f.size > MAX_MB * 1024 * 1024) {
-      setError(`El archivo supera el límite de ${MAX_MB} MB`)
-      return
-    }
 
     setError(null)
+    setWarning(
+      f.size > WARN_MB * 1024 * 1024
+        ? 'Archivo grande: el procesamiento puede demorar unos minutos.'
+        : null
+    )
     setLoading(true)
     setFile(f)
     try {
@@ -55,6 +57,7 @@ export function PasoSubirSTL({ onAnalysis }: Props) {
     } catch (err: unknown) {
       const msg = (err as { error?: string })?.error ?? 'Error al procesar el archivo'
       setError(msg)
+      setWarning(null)
       setFile(null)
     } finally {
       setLoading(false)
@@ -94,7 +97,7 @@ export function PasoSubirSTL({ onAnalysis }: Props) {
             >
               <IconUpload size={32} className="text-dryada-gray-400 mx-auto mb-3" aria-hidden />
               <p className="text-[14px] text-dryada-gray-700 mb-1">Arrastrá tu archivo .STL acá</p>
-              <p className="text-[12px] text-dryada-gray-400 mb-4">Máximo {MAX_MB} MB · solo archivos .stl</p>
+              <p className="text-[12px] text-dryada-gray-400 mb-4">Solo archivos .stl · archivos grandes pueden demorar unos minutos</p>
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
@@ -117,6 +120,7 @@ export function PasoSubirSTL({ onAnalysis }: Props) {
             <div className="border-[1.5px] border-dryada-violet-light bg-dryada-violet-tint rounded-xl p-10 text-center">
               <IconLoader2 size={28} className="text-dryada-violet mx-auto mb-2 animate-spin" aria-hidden />
               <p className="text-[13px] text-dryada-violet">Analizando modelo...</p>
+              {warning && <p className="text-[12px] text-dryada-violet/70 mt-1">{warning}</p>}
             </div>
           )}
 

@@ -10,6 +10,10 @@ interface QuoteBody {
   observaciones?: string;
 }
 
+function sseWrite(raw: NodeJS.WritableStream, payload: unknown): void {
+  raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
 export const quoteRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: QuoteBody }>('/api/quote', {
     schema: {
@@ -35,17 +39,27 @@ export const quoteRoute: FastifyPluginAsync = async (fastify) => {
       return reply.status(404).send({ error: 'El archivo ya no está disponible (puede haber expirado). Por favor volvé a subir el STL.', code: 'UPLOAD_NOT_FOUND' });
     }
 
+    reply.hijack();
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
     const ac = new AbortController();
     request.raw.once('close', () => ac.abort());
 
-    let result;
     try {
-      result = await quoteService.calcularCotizacion({ stlAnalysis, materialId, maquinaId, cantidad, empleadoId, observaciones, signal: ac.signal });
+      const result = await quoteService.calcularCotizacion({
+        stlAnalysis, materialId, maquinaId, cantidad, empleadoId, observaciones, signal: ac.signal,
+        onProgress: (pct, etapa) => sseWrite(reply.raw, { type: 'progress', pct, etapa }),
+      });
+      sseWrite(reply.raw, { type: 'done', result });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al calcular la cotización.';
-      return reply.status(400).send({ error: message, code: 'QUOTE_ERROR' });
+      sseWrite(reply.raw, { type: 'error', message, code: 'QUOTE_ERROR' });
+    } finally {
+      reply.raw.end();
     }
-
-    return reply.send(result);
   });
 };
