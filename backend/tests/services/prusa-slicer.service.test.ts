@@ -203,6 +203,18 @@ describe('PrusaSlicerService', () => {
     expect(onProgress).not.toHaveBeenCalled();
   });
 
+  it('EC-002b: el error de exit code distinto de 0 incluye el tail de stderr para diagnóstico', async () => {
+    const proc = makeProc();
+    mockSpawn.mockReturnValue(proc as any);
+
+    setImmediate(() => {
+      (proc.stderr as EventEmitter).emit('data', Buffer.from('error: Unable to repair mesh\n'));
+      proc.emit('close', 1);
+    });
+
+    await expect(svc.slice('/tmp/abc123.stl', 1.24)).rejects.toThrow('error: Unable to repair mesh');
+  });
+
   it('progreso: onProgress es opcional, no rompe el flujo si se omite', async () => {
     const proc = makeProc();
     mockSpawn.mockReturnValue(proc as any);

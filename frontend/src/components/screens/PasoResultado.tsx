@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { IconArrowLeft, IconFileDownload, IconSend, IconAlertTriangle, IconX, IconLoader2, IconCircleCheck, IconMail } from '@tabler/icons-react'
+import { IconArrowLeft, IconFileDownload, IconSend, IconAlertTriangle, IconX, IconLoader2, IconCircleCheck, IconMail, IconPlus } from '@tabler/icons-react'
 import { sendEmail } from '../../services/api'
 import { numeroCotizacion, fmtUSD, fmtARS, fmtGramos, fmtFecha } from '../../utils/format'
 import type { CotizacionResult, Complejidad } from '../../types'
@@ -8,6 +8,7 @@ interface Props {
   result: CotizacionResult
   empleado: string
   onBack: () => void
+  onNuevaCotizacion: () => void
   onGeneratePdf: () => Promise<string>
   onDownloadPdf: () => Promise<void>
 }
@@ -125,7 +126,7 @@ function ModalEmail({ quoteId, onClose, onGeneratePdf }: {
   )
 }
 
-export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownloadPdf }: Props) {
+export function PasoResultado({ result, empleado, onBack, onNuevaCotizacion, onGeneratePdf, onDownloadPdf }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
@@ -253,6 +254,14 @@ export function PasoResultado({ result, empleado, onBack, onGeneratePdf, onDownl
         >
           <IconSend size={15} aria-hidden />
           Enviar por email
+        </button>
+        <button
+          type="button"
+          onClick={onNuevaCotizacion}
+          className="inline-flex items-center gap-1.5 border border-dryada-gray-100 text-dryada-gray-700 rounded-lg px-5 py-2.5 text-[14px] font-medium hover:bg-dryada-gray-50 transition-colors ml-auto"
+        >
+          <IconPlus size={15} aria-hidden />
+          Nueva cotización
         </button>
       </div>
 

@@ -72,6 +72,14 @@ export default function App() {
     setStep(3)
   }
 
+  function handleNuevaCotizacion() {
+    setUploadResult(null)
+    setStlFile(null)
+    setQuoteResult(null)
+    setObservaciones('')
+    setStep(1)
+  }
+
   function buildPdfElement() {
     return (
       <CotizacionPDF
@@ -148,6 +156,7 @@ export default function App() {
                   result={quoteResult}
                   empleado={empleado}
                   onBack={() => setStep(2)}
+                  onNuevaCotizacion={handleNuevaCotizacion}
                   onGeneratePdf={handleGeneratePdf}
                   onDownloadPdf={handleDownloadPdf}
                 />

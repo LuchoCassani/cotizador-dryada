@@ -75,6 +75,15 @@ export class PrusaSlicerService implements IPrusaSlicerService {
         }
       });
 
+      // Solo se guardan los últimos ~4000 chars: PrusaSlicer puede emitir miles de
+      // líneas de diagnóstico de reparación de malla ("facet (N)/first facet") en
+      // archivos con geometría problemática, y el mensaje de error real suele estar
+      // al final.
+      let stderrTail = '';
+      proc.stderr.on('data', (chunk: Buffer) => {
+        stderrTail = (stderrTail + chunk.toString()).slice(-4000);
+      });
+
       const onAbort = () => {
         proc.kill('SIGKILL');
         reject(new Error('slicing cancelado: cliente desconectado'));
@@ -98,7 +107,7 @@ export class PrusaSlicerService implements IPrusaSlicerService {
         clearTimeout(timer);
         cleanup();
         if (code === 0) resolve();
-        else reject(new Error(`exit code ${code}`));
+        else reject(new Error(`exit code ${code}${stderrTail ? ` — stderr: ${stderrTail.trim()}` : ''}`));
       });
     });
   }
