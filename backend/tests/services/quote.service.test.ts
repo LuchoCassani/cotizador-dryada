@@ -204,6 +204,7 @@ describe('QuoteService.calcularCotizacion — propagación de onProgress', () =>
     expect(prusaSlicerService.slice).toHaveBeenCalledWith(
       path.join(uploadsDir, 'upload-test.stl'),
       1.24,
+      { xMm: 180, yMm: 180, zMm: 180 },
       undefined,
       onProgress,
     );

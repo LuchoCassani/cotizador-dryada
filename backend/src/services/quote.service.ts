@@ -79,7 +79,8 @@ export class QuoteService {
 
     if (stlExists) {
       try {
-        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, input.signal, input.onProgress);
+        const buildVolume = { xMm: machine.capacidadXmm, yMm: machine.capacidadYmm, zMm: machine.capacidadZmm };
+        const sliced = await this.prusaSlicerService.slice(stlPath, material.densidad, buildVolume, input.signal, input.onProgress);
         gramosTotal = sliced.gramosTotal * (1 + params.desperdicioPct);
         weightSource = 'prusaslicer';
       } catch (err) {

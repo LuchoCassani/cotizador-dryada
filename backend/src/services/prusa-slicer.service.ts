@@ -5,10 +5,16 @@ export interface SliceResult {
   gramosTotal: number;
 }
 
+export interface BuildVolume {
+  xMm: number;
+  yMm: number;
+  zMm: number;
+}
+
 export type ProgressCallback = (pct: number, etapa: string) => void;
 
 export interface IPrusaSlicerService {
-  slice(stlPath: string, densidad: number, signal?: AbortSignal, onProgress?: ProgressCallback): Promise<SliceResult>;
+  slice(stlPath: string, densidad: number, buildVolume: BuildVolume, signal?: AbortSignal, onProgress?: ProgressCallback): Promise<SliceResult>;
 }
 
 const FILAMENT_REGEX = /^;\s*filament used \[g\]\s*=\s*([\d.]+)/m;
@@ -23,10 +29,11 @@ export class PrusaSlicerService implements IPrusaSlicerService {
     private readonly timeoutMs: number = 300_000,
   ) {}
 
-  async slice(stlPath: string, densidad: number, signal?: AbortSignal, onProgress?: ProgressCallback): Promise<SliceResult> {
+  async slice(stlPath: string, densidad: number, buildVolume: BuildVolume, signal?: AbortSignal, onProgress?: ProgressCallback): Promise<SliceResult> {
     if (this.busy) throw new Error('PrusaSlicer ocupado: otro slicing en curso');
     this.busy = true;
     const gcodePath = stlPath.replace('.stl', '.gcode');
+    const { xMm, yMm, zMm } = buildVolume;
     const args = [
       '--fill-density', '10%',
       '--perimeters', '2',
@@ -34,6 +41,12 @@ export class PrusaSlicerService implements IPrusaSlicerService {
       '--layer-height', this.layerHeight,
       '--filament-density', String(densidad),
       '--threads', '1',
+      // Sin esto, PrusaSlicer usa su bed/altura por defecto (200x200x200mm),
+      // más chico que varias máquinas de Dryada — piezas que sí entran en la
+      // máquina seleccionada caían al fallback N1 con "exceeds the maximum
+      // build volume height".
+      '--bed-shape', `0x0,${xMm}x0,${xMm}x${yMm},0x${yMm}`,
+      '--max-print-height', String(zMm),
       '--export-gcode',
       '--output', gcodePath,
       stlPath,
